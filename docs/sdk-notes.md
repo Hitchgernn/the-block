@@ -166,6 +166,29 @@ npm install --omit=optional
 
 `zod` is a peer dep, so it must be installed explicitly — it is a direct dependency in `package.json`.
 
+### Two peer deps are NOT optional in practice
+
+Despite being declared as peers, these are imported **statically on the module load path** of the package's Node entry, so the app will not build or run without them:
+
+| Package | Imported by | Why |
+|---|---|---|
+| `@modelcontextprotocol/sdk` | `dist/src/mcp/config.node.js` | MCP transports, loaded eagerly by `index.node.js` |
+| `@opentelemetry/api` | `dist/src/telemetry/tracer.js` | `AgentTrace` is a root export |
+
+Both are installed as direct dependencies. Every other peer (`openai`, `@google/genai`, `@anthropic-ai/sdk`, `express`, `@cedar-policy/*`, `@a2a-js/sdk`, the OpenTelemetry exporters) sits behind a subpath export or an unreachable module and is genuinely not needed.
+
+### Next.js must not bundle the SDK
+
+`next.config.ts` sets:
+
+```ts
+serverExternalPackages: ["@strands-agents/sdk"]
+```
+
+Without it, Turbopack statically resolves every branch of the SDK — including the MCP transports and `@aws-sdk/client-s3` in the context offloader — and the build fails with `Module not found` for packages the app never calls. Marking it external means Node `require`s it from `node_modules` at runtime and those branches are never touched.
+
+Verified: `next build` succeeds and `/api/spike` compiles as a dynamic route.
+
 ---
 
 ## 7. Not used (available if needed)
