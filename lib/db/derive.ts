@@ -18,11 +18,19 @@ import type {
 const POINTS_PER_SHIFT = 10
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
-/** design.md section 4. Additive only — a plot never regresses. */
+/**
+ * design.md section 4. Additive only — a plot never regresses.
+ *
+ * Thresholds are scaled up from the ones in design.md (1 / 2-3 / 4-6 / 7+).
+ * Those were written before the seed existed; against eight weeks of history
+ * volunteers accumulate 2-12 completed shifts, which put 15 of 23 plots at
+ * stage 4 and made the whole block read as uniformly lit. Scaling restores the
+ * spread the stages exist to show. The shape of the ladder is unchanged.
+ */
 export function growthStage(completedShifts: number): GrowthStage {
-  if (completedShifts >= 7) return 4
-  if (completedShifts >= 4) return 3
-  if (completedShifts >= 2) return 2
+  if (completedShifts >= 10) return 4
+  if (completedShifts >= 7) return 3
+  if (completedShifts >= 4) return 2
   if (completedShifts >= 1) return 1
   return 0
 }

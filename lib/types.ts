@@ -59,6 +59,44 @@ export interface Reflection {
 }
 
 // ---------------------------------------------------------------------------
+// Event payload contracts
+//
+// `payload` is free-form JSON in the schema, but these shapes are written by
+// the agent loop and read by the digest. They are part of the frozen contract:
+// if the loop stops writing `reasoning`, the coordinator surface silently loses
+// the thing that proves the agent decided rather than broadcast.
+// ---------------------------------------------------------------------------
+
+/** Written with every `shift_opened`, `ask_*`, `shift_completed`, `no_show`. */
+export interface SlotPayload {
+  slot: SlotLabel
+  [key: string]: unknown
+}
+
+/** Written with `ask_sent`, one event per volunteer actually contacted. */
+export interface AskSentPayload extends SlotPayload {
+  volunteerName: string
+  /** The message the agent wrote for this specific person. */
+  message: string
+  /** Why this person, in the model's words. */
+  rationale: string
+  /** False when Slack was unavailable and the ask went to the outbox. */
+  delivered: boolean
+}
+
+/** Written once per loop run, capturing the decide step. Demo asset. */
+export interface AgentReasoningPayload extends SlotPayload {
+  /** The model's account of how it read the gap and chose people. */
+  reasoning: string
+  /** Volunteer ids it chose. */
+  chose: string[]
+  /** Volunteer ids it considered and passed over, if it said so. */
+  passedOver?: string[]
+  /** How many events were retrieved into the decide prompt. */
+  contextEventCount: number
+}
+
+// ---------------------------------------------------------------------------
 // Derived state — computed from events, never stored
 // ---------------------------------------------------------------------------
 
