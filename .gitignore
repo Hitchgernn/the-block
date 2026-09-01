@@ -42,3 +42,6 @@ next-env.d.ts
 
 # keep the template, ignore real values
 !.env.example
+
+# local dev database
+.data/
