@@ -196,3 +196,30 @@ Verified: `next build` succeeds and `/api/spike` compiles as a dynamic route.
 `Graph` and `Swarm` multi-agent orchestration, `McpClient`, `MemoryManager` (SDK-native memory — we implement our own per `architecture.md` §3.2/§3.3), `SessionManager`, `Sandbox`, hooks (`BeforeToolCallEvent`, `AfterModelCallEvent`, …), middleware, `ModelRouter` with fallback.
 
 The SDK's own `MemoryManager` is deliberately **not** used: the whole point of the project is the event-log + reflection architecture from Park et al., and it needs to be visible and inspectable in our own tables.
+
+---
+
+## 8. Seeded scenario — the signal the reflection must find
+
+`lib/seed.ts` is deterministic (fixed LCG seed `20260901`). Reseed with
+`POST /api/dev/seed`. Tune the reflection prompt against these facts:
+
+| Slot | Minimum | Weekly attendance, oldest to newest |
+|---|---|---|
+| **Saturday 9am** | 6 | **9, 9, 7 → 5, 4, 3, 2, 3** |
+| Saturday 1pm | 4 | 4, 6, 8, 7, 4, 6, 5, 4 |
+| Tuesday 5pm | 4 | 3, 5, 4, 6, 5, 5, 5, 5 |
+| Thursday 5pm | 4 | 6, 7, 4, 4, 5, 5, 5, 4 |
+
+**The planted pattern:** Saturday 9am is healthy for three weeks, then short
+every week for five. **Maria Ocampo** and **James Whitfield** — its two most
+reliable regulars — last appear 2026-07-18, exactly where the slide starts.
+Remaining regulars then turn out slightly less as the shift gets thinner.
+
+Every other slot holds at or above its minimum, so naming Saturday 9am is a real
+finding rather than the only thing available to say. The upcoming Saturday 9am is
+seeded short by three, which is what the agent loop has to act on.
+
+A correct reflection names the slot, the trend, and ideally the two departed
+regulars, with `source_event_ids` pointing at the `shift_short` and
+`shift_completed` rows that prove it.
