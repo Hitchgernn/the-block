@@ -73,6 +73,17 @@ const agent = new Agent({ tools: [weatherTool] })
 
 There is a second overload, `tool(config: FunctionToolConfig)`, taking a raw JSON schema. We don't use it.
 
+### Calling a tool from your own code
+
+`tool()` returns an `InvokableTool<TInput, TReturn>`, which has a direct
+`invoke(input, context?): Promise<TReturn>` (`tools/tool.d.ts` line 165). It runs
+the Zod validation, unwraps async generators and returns the raw value rather
+than a `ToolResult`, and lets errors throw instead of wrapping them.
+
+`lib/agent/core.ts` uses it for the observe, retrieve, act and log steps, so the
+five tools in `architecture.md` §3.1 are the single implementation of those
+steps whether the model calls them or the loop does.
+
 ---
 
 ## 3. Bedrock model provider
@@ -125,6 +136,28 @@ import { StructuredOutputError } from '@strands-agents/sdk'
 ```
 
 This is the free reliability `architecture.md` §3.1 is counting on for the decide step.
+
+### It composes with regular tools
+
+Structured output is not a separate mode. The agent registers a synthetic tool
+named `strands_structured_output` whose input schema is your Zod schema
+(`tools/structured-output-tool.js`), so a `structuredOutputSchema` agent can also
+be given normal `tools` — the model may call those first, and the run ends when
+it calls the structured output tool. If the model replies with plain text
+instead, the agent drops that turn and forces the tool on the next cycle; only
+if it refuses again does it throw `StructuredOutputError` (`agent/agent.js`
+~line 1139).
+
+`InvokeOptions.structuredOutputSchema` also exists as a per-call override of the
+agent-level schema. We use the agent-level one.
+
+> **Gotcha — no `.refine()` in a schema the model sees.** Both tool input schemas
+> and the structured output schema go through `zodSchemaToJsonSchema`, which is a
+> thin wrapper over `z.toJSONSchema` (`tools/zod-utils.js`). Zod 4 throws on
+> anything it cannot represent in JSON Schema, and a refinement is top of that
+> list. To constrain a value to a known set — volunteer ids, say — build a
+> `z.enum(idsArray)` at call time. It survives the conversion, and an invalid id
+> then triggers the automatic validation retry instead of reaching the database.
 
 ### `AgentResult` fields
 
