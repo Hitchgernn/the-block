@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 800" width="1240" height="800" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#aeb6c0"/>
+    </marker>
+    <marker id="aLamp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#ffc94a"/>
+    </marker>
+  </defs>
+
+  <rect width="1240" height="800" fill="#2b3b52"/>
+
+  <text x="48" y="58" font-family="Georgia, serif" font-size="30" fill="#dcd3c4">The Block — architecture</text>
+  <text x="48" y="84" font-size="15" fill="#aeb6c0">One Next.js app on Vercel. Every surface reads the same event log; nothing that can be derived is stored.</text>
+
+  <!-- ================= inputs ================= -->
+  <text x="48" y="132" font-size="12" fill="#aeb6c0" letter-spacing="0.5">TRIGGERED BY</text>
+  <rect x="48" y="146" width="196" height="52" rx="6" fill="#1c2838" stroke="#3d4a5f"/>
+  <text x="64" y="170" font-size="14" fill="#dcd3c4">Judge presses a button</text>
+  <text x="64" y="188" font-size="12" fill="#aeb6c0">POST /api/trigger/* · no auth</text>
+
+  <rect x="48" y="210" width="196" height="52" rx="6" fill="#1c2838" stroke="#3d4a5f"/>
+  <text x="64" y="234" font-size="14" fill="#dcd3c4">Vercel Cron</text>
+  <text x="64" y="252" font-size="12" fill="#aeb6c0">GET /api/cron/* · bearer</text>
+
+  <!-- ================= agent loop ================= -->
+  <rect x="292" y="120" width="560" height="196" rx="8" fill="#223044" stroke="#4a5a72"/>
+  <text x="312" y="146" font-size="13" fill="#dcd3c4">AGENT LOOP — lib/agent/core.ts · Strands Agents SDK</text>
+
+  <rect x="312" y="162" width="96" height="60" rx="5" fill="#1c2838" stroke="#3d4a5f"/>
+  <text x="360" y="188" font-size="13" fill="#dcd3c4" text-anchor="middle">observe</text>
+  <text x="360" y="206" font-size="11" fill="#aeb6c0" text-anchor="middle">which shift</text>
+
+  <rect x="424" y="162" width="96" height="60" rx="5" fill="#1c2838" stroke="#3d4a5f"/>
+  <text x="472" y="188" font-size="13" fill="#dcd3c4" text-anchor="middle">retrieve</text>
+  <text x="472" y="206" font-size="11" fill="#aeb6c0" text-anchor="middle">who, history</text>
+
+  <rect x="536" y="162" width="112" height="60" rx="5" fill="#33405a" stroke="#ffc94a" stroke-width="1.5"/>
+  <text x="592" y="188" font-size="13" fill="#dcd3c4" text-anchor="middle">decide</text>
+  <text x="592" y="206" font-size="11" fill="#ffc94a" text-anchor="middle">model call</text>
+
+  <rect x="664" y="162" width="80" height="60" rx="5" fill="#1c2838" stroke="#3d4a5f"/>
+  <text x="704" y="188" font-size="13" fill="#dcd3c4" text-anchor="middle">act</text>
+  <text x="704" y="206" font-size="11" fill="#aeb6c0" text-anchor="middle">send asks</text>
+
+  <rect x="760" y="162" width="76" height="60" rx="5" fill="#1c2838" stroke="#3d4a5f"/>
+  <text x="798" y="188" font-size="13" fill="#dcd3c4" text-anchor="middle">log</text>
+  <text x="798" y="206" font-size="11" fill="#aeb6c0" text-anchor="middle">events</text>
+
+  <path d="M408 192 H424" stroke="#aeb6c0" stroke-width="1.4" marker-end="url(#a)" fill="none"/>
+  <path d="M520 192 H536" stroke="#aeb6c0" stroke-width="1.4" marker-end="url(#a)" fill="none"/>
+  <path d="M648 192 H664" stroke="#aeb6c0" stroke-width="1.4" marker-end="url(#a)" fill="none"/>
+  <path d="M744 192 H760" stroke="#aeb6c0" stroke-width="1.4" marker-end="url(#a)" fill="none"/>
+
+  <text x="312" y="252" font-size="12" fill="#aeb6c0">Five Zod tools: getShiftStatus · queryMemory · sendAsk · logEvent · awardPoints</text>
+  <text x="312" y="272" font-size="12" fill="#dcd3c4">The decide step is a real model call over retrieved context, with</text>
+  <text x="312" y="290" font-size="12" fill="#dcd3c4">structured output validated by Zod. It names specific people and</text>
+  <text x="312" y="308" font-size="12" fill="#dcd3c4">writes each of them their own message. There is no fallback path.</text>
+
+  <path d="M244 172 H292" stroke="#aeb6c0" stroke-width="1.4" marker-end="url(#a)" fill="none"/>
+  <path d="M244 236 H268 V186 H292" stroke="#aeb6c0" stroke-width="1.4" marker-end="url(#a)" fill="none"/>
+
+  <!-- ================= reflection ================= -->
+  <rect x="292" y="336" width="560" height="120" rx="8" fill="#223044" stroke="#4a5a72"/>
+  <text x="312" y="362" font-size="13" fill="#dcd3c4">REFLECTION — lib/agent/reflection.ts</text>
+  <text x="312" y="386" font-size="12" fill="#aeb6c0">~300 events → aggregate per slot per week → a ~55 line brief → one model call</text>
+  <text x="312" y="408" font-size="12" fill="#dcd3c4">Finds what nobody was watching: "Saturday 9am has run short five weeks running."</text>
+  <text x="312" y="430" font-size="12" fill="#dcd3c4">Each insight stores <tspan fill="#ffc94a">source_event_ids</tspan>, so the digest can show the rows it came from.</text>
+
+  <!-- ================= externals ================= -->
+  <rect x="900" y="146" width="292" height="76" rx="6" fill="#1c2838" stroke="#3d4a5f"/>
+  <text x="920" y="172" font-size="14" fill="#dcd3c4">Amazon Bedrock</text>
+  <text x="920" y="194" font-size="12" fill="#aeb6c0">Claude, via the Strands SDK default</text>
+  <text x="920" y="212" font-size="12" fill="#aeb6c0">provider. Reasoning lives here.</text>
+
+  <rect x="900" y="240" width="292" height="76" rx="6" fill="#1c2838" stroke="#3d4a5f"/>
+  <text x="920" y="266" font-size="14" fill="#dcd3c4">Slack</text>
+  <text x="920" y="288" font-size="12" fill="#aeb6c0">One targeted ask per person, never a</text>
+  <text x="920" y="306" font-size="12" fill="#aeb6c0">broadcast. Falls back to the event log.</text>
+
+  <path d="M852 184 H900" stroke="#ffc94a" stroke-width="1.4" marker-end="url(#aLamp)" fill="none"/>
+  <path d="M852 278 H900" stroke="#aeb6c0" stroke-width="1.4" marker-end="url(#a)" fill="none"/>
+  <path d="M852 396 H876 V200 H900" stroke="#ffc94a" stroke-width="1.4" marker-end="url(#aLamp)" fill="none"/>
+
+  <!-- ================= store ================= -->
+  <rect x="48" y="500" width="1144" height="128" rx="8" fill="#1c2838" stroke="#ffc94a" stroke-width="1.5"/>
+  <text x="72" y="530" font-size="15" fill="#dcd3c4">events — append only, Turso (libSQL). The only table the loop writes to.</text>
+  <text x="72" y="556" font-size="12" fill="#aeb6c0">shift_opened · ask_sent · ask_accepted · ask_declined · shift_completed · no_show · shift_short · agent_reasoning</text>
+  <text x="72" y="586" font-size="12" fill="#dcd3c4">Points, streaks, growth stage, reliability and shift coverage are <tspan fill="#ffc94a">never stored</tspan>. lib/db/derive.ts recomputes them</text>
+  <text x="72" y="604" font-size="12" fill="#dcd3c4">from the log on every read — which is why the 3D scene cannot drift from what actually happened.</text>
+
+  <path d="M798 222 V232 H862 V486 H700 V500" stroke="#aeb6c0" stroke-width="1.4" marker-end="url(#a)" fill="none"/>
+  <path d="M300 500 V468 H472 V456" stroke="#aeb6c0" stroke-width="1.4" marker-end="url(#a)" fill="none"/>
+  <text x="308" y="486" font-size="11" fill="#aeb6c0">reads</text>
+  <text x="706" y="480" font-size="11" fill="#aeb6c0">writes</text>
+
+  <!-- ================= surfaces ================= -->
+  <rect x="48" y="656" width="556" height="112" rx="8" fill="#223044" stroke="#4a5a72"/>
+  <text x="72" y="682" font-size="14" fill="#dcd3c4">The Block — volunteer surface</text>
+  <text x="72" y="704" font-size="12" fill="#aeb6c0">react-three-fiber, primitives only. Growth stages 0–4</text>
+  <text x="72" y="722" font-size="12" fill="#aeb6c0">derived from completed shifts. One window lights up</text>
+  <text x="72" y="740" font-size="12" fill="#aeb6c0">per person who showed up; quiet plots dim, never dark.</text>
+
+  <rect x="636" y="656" width="556" height="112" rx="8" fill="#223044" stroke="#4a5a72"/>
+  <text x="660" y="682" font-size="14" fill="#dcd3c4">Digest — coordinator surface</text>
+  <text x="660" y="704" font-size="12" fill="#aeb6c0">What the agent noticed, what it did, what is still open.</text>
+  <text x="660" y="722" font-size="12" fill="#aeb6c0">Every insight expands to the raw events behind it, which</text>
+  <text x="660" y="740" font-size="12" fill="#aeb6c0">is how you prove it was not a plausible sentence.</text>
+
+  <path d="M326 628 V656" stroke="#aeb6c0" stroke-width="1.4" marker-end="url(#a)" fill="none"/>
+  <path d="M914 628 V656" stroke="#aeb6c0" stroke-width="1.4" marker-end="url(#a)" fill="none"/>
+</svg>

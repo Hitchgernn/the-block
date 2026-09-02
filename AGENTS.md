@@ -104,7 +104,7 @@ From `design.md`, and they are checked:
 
 ## Seeded data
 
-`lib/seed.ts` is deterministic (fixed LCG seed). It plants one discoverable pattern: **Saturday 9am** runs 9, 9, 7 (minimum 6) then 5, 4, 3, 2, 3 — short five weeks running — because its two most reliable regulars, Maria Ocampo and James Whitfield, stop appearing after 2026-07-18. Every other slot holds at or above its minimum, so naming Saturday 9am is a real discrimination. `docs/sdk-notes.md` §8 has the full table; tune reflection prompts against it.
+`lib/seed.ts` is deterministic (fixed LCG seed). It plants one discoverable pattern: **Saturday 9am** runs 9, 9, 7 (minimum 6) then 5, 4, 3, 2, 3 — short five weeks running — because its two most reliable regulars, Maria Ocampo and James Whitfield, stop appearing after 2026-07-18. No other slot degrades. Tuesday 5pm dips one under in the oldest week and never again, so naming Saturday 9am is a real discrimination and not the only sentence available. `docs/sdk-notes.md` §8 has the full table; tune reflection prompts against it.
 
 Seeded inputs, real logic. **Disclose this in the README and the video** (`prd.md` §10).
 

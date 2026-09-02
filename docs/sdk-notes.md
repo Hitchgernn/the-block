@@ -249,8 +249,10 @@ every week for five. **Maria Ocampo** and **James Whitfield** — its two most
 reliable regulars — last appear 2026-07-18, exactly where the slide starts.
 Remaining regulars then turn out slightly less as the shift gets thinner.
 
-Every other slot holds at or above its minimum, so naming Saturday 9am is a real
-finding rather than the only thing available to say. The upcoming Saturday 9am is
+No other slot degrades. The only other shortfall in the whole dataset is
+Tuesday 5pm finishing one under in the oldest week — noise, not a trend — so
+naming Saturday 9am is a real finding rather than the only thing available to
+say. The upcoming Saturday 9am is
 seeded short by three, which is what the agent loop has to act on.
 
 A correct reflection names the slot, the trend, and ideally the two departed
