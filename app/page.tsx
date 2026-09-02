@@ -64,6 +64,11 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    // refresh() is async: every setState inside it runs after an awaited fetch,
+    // so there is no synchronous cascading render for the rule to prevent. It
+    // fires because refresh transitively sets state, not because it does so in
+    // this effect's body.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh()
     const timer = window.setInterval(() => {
       if (document.visibilityState === 'visible') void refresh()
