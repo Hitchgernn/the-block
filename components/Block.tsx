@@ -57,7 +57,7 @@ function Framing({
     // degrees horizontally, so fitting the block's width shoved the camera far
     // enough away that the scene became a stripe in the middle of the screen.
     // Widening the lens on small screens fits the same block from closer in.
-    cam.fov = compact ? 46 : 30
+    cam.fov = compact ? 58 : 30
     const vFov = (cam.fov * Math.PI) / 180
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect)
     const elevation = Math.asin(VIEW_DIR.y)
@@ -71,7 +71,9 @@ function Framing({
     // The near corner of the block projects lower than spanUp predicts, so the
     // bottom row clipped at the default margin. Verified against a 1400x708
     // capture with 23 plots.
-    const margin = compact ? 1.06 : 1.34
+    // Verified against the edge-sampling check: nothing touches a viewport
+    // edge at this margin with the food bank in frame.
+    const margin = compact ? 1.04 : 1.14
     const distance = Math.max(
       (spanAcross * margin) / 2 / Math.tan(hFov / 2),
       (spanUp * margin) / 2 / Math.tan(vFov / 2),
@@ -143,7 +145,10 @@ export default function Block({
       />
 
       <mesh rotation-x={-Math.PI / 2}>
-        <planeGeometry args={[160, 160]} />
+        {/* Large enough that its far edge always falls beyond fog.far — at a
+            wide mobile fov a smaller plane showed its horizon as a hard
+            silhouette against the sky. */}
+        <planeGeometry args={[420, 420]} />
         <meshStandardMaterial color={PALETTE.duskDeep} roughness={1} />
       </mesh>
 

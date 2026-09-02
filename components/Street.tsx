@@ -98,8 +98,7 @@ export default function Street({ width, depth, road }: StreetProps) {
         [road.x + 1.1, road.z + 1.1],
         [road.x - 1.1, road.z - 1.1],
         [road.x + 1.1, -depth / 2 - 2.4],
-        [-width / 2 + 1.2, -depth / 2 - 2.4],
-        [width / 2 - 1.2, -depth / 2 - 2.4],
+        [road.x - 3.4, -depth / 2 - 2.4],
       ].map(([x, z]) => (
         <group key={`p${x}-${z}`} position={[x, 0, z]}>
           <mesh position={[0, 0.6, 0]}>
