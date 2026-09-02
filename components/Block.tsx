@@ -51,7 +51,10 @@ function Framing({
     const spanUp =
       ((width + depth) / Math.SQRT2) * Math.sin(elevation) +
       3.4 * Math.cos(elevation)
-    const margin = compact ? 1.04 : 1.16
+    // The near corner of the block projects lower than spanUp predicts, so the
+    // bottom row clipped at the default margin. Verified against a 1400x708
+    // capture with 23 plots.
+    const margin = compact ? 1.18 : 1.34
     const distance = Math.max(
       (spanAcross * margin) / 2 / Math.tan(hFov / 2),
       (spanUp * margin) / 2 / Math.tan(vFov / 2),
