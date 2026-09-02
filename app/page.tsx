@@ -1,69 +1,211 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client'
+
+import { useCallback, useEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
+import type {
+  DigestResponse,
+  Plot,
+  StateResponse,
+  TriggerResponse,
+} from '@/lib/types'
+import Digest from '@/components/Digest'
+import Overlay from '@/components/Overlay'
+import { describePlot } from '@/components/scene-utils'
+
+const Block = dynamic(() => import('@/components/Block'), { ssr: false })
+
+const POLL_MS = 15000
+const FADE_AFTER_MS = 14000
 
 export default function Home() {
+  const [state, setState] = useState<StateResponse | null>(null)
+  const [digest, setDigest] = useState<DigestResponse | null>(null)
+  const [overlayOpen, setOverlayOpen] = useState(true)
+  const [digestOpen, setDigestOpen] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [lightUpKeys, setLightUpKeys] = useState<Record<string, number>>({})
+  const [runStatus, setRunStatus] = useState<string | null>(null)
+  const [compact, setCompact] = useState(false)
+  const [reducedMotion, setReducedMotion] = useState(false)
+  const [faded, setFaded] = useState(false)
+
+  const seenShifts = useRef<Map<string, number> | null>(null)
+
+  const refresh = useCallback(async () => {
+    const [stateRes, digestRes] = await Promise.all([
+      fetch('/api/state', { cache: 'no-store' }),
+      fetch('/api/digest', { cache: 'no-store' }),
+    ])
+    if (stateRes.ok) {
+      const next = (await stateRes.json()) as StateResponse
+      const previous = seenShifts.current
+      if (previous) {
+        const bumped: string[] = []
+        for (const plot of next.plots) {
+          const before = previous.get(plot.volunteerId)
+          if (before !== undefined && plot.completedShifts > before) {
+            bumped.push(plot.volunteerId)
+          }
+        }
+        if (bumped.length > 0) {
+          setLightUpKeys((keys) => {
+            const copy = { ...keys }
+            for (const id of bumped) copy[id] = (copy[id] ?? 0) + 1
+            return copy
+          })
+        }
+      }
+      seenShifts.current = new Map(
+        next.plots.map((plot) => [plot.volunteerId, plot.completedShifts]),
+      )
+      setState(next)
+    }
+    if (digestRes.ok) setDigest((await digestRes.json()) as DigestResponse)
+  }, [])
+
+  useEffect(() => {
+    void refresh()
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void refresh()
+    }, POLL_MS)
+    return () => window.clearInterval(timer)
+  }, [refresh])
+
+  useEffect(() => {
+    const narrow = window.matchMedia('(max-width: 720px)')
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const sync = () => {
+      setCompact(narrow.matches)
+      setReducedMotion(still.matches)
+    }
+    sync()
+    narrow.addEventListener('change', sync)
+    still.addEventListener('change', sync)
+    return () => {
+      narrow.removeEventListener('change', sync)
+      still.removeEventListener('change', sync)
+    }
+  }, [])
+
+  // The recent-activity overlay settles back after a while of no input.
+  useEffect(() => {
+    let timer = window.setTimeout(() => setFaded(true), FADE_AFTER_MS)
+    const wake = () => {
+      setFaded(false)
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => setFaded(true), FADE_AFTER_MS)
+    }
+    window.addEventListener('pointerdown', wake)
+    window.addEventListener('pointermove', wake)
+    window.addEventListener('keydown', wake)
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('pointerdown', wake)
+      window.removeEventListener('pointermove', wake)
+      window.removeEventListener('keydown', wake)
+    }
+  }, [])
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDigestOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const runAgent = useCallback(async () => {
+    setOverlayOpen(false)
+    setRunStatus('Running the agent.')
+    try {
+      const response = await fetch('/api/trigger/loop', { method: 'POST' })
+      if (response.status === 404) {
+        setRunStatus(
+          'The agent loop is not connected yet. Everything else here is live.',
+        )
+        return
+      }
+      if (!response.ok) {
+        setRunStatus('The agent run failed. Try it again in a moment.')
+        return
+      }
+      const result = (await response.json()) as TriggerResponse
+      setRunStatus(result.summary || 'The agent finished its pass.')
+      await refresh()
+      setDigestOpen(true)
+    } catch {
+      setRunStatus('The agent could not be reached. Check the server is up.')
+    }
+  }, [refresh])
+
+  const plots: Plot[] = state?.plots ?? []
+  const selected = plots.find((plot) => plot.volunteerId === selectedId) ?? null
+  const activity = state?.recentActivity.slice(0, 3) ?? []
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="shell">
+      <div className="scene" aria-hidden="true">
+        <Block
+          plots={plots}
+          lightUpKeys={lightUpKeys}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          compact={compact}
+          reducedMotion={reducedMotion}
         />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
+      </div>
+
+      <header className="header">
+        <h1 className="wordmark">The Block</h1>
+        <p className="tagline">
+          Every light is someone who showed up.
+        </p>
+        <div className="header-spacer" />
+        <button
+          type="button"
+          className="ghost-button"
+          aria-expanded={digestOpen}
+          onClick={() => setDigestOpen((value) => !value)}
+        >
+          Digest
+        </button>
+      </header>
+
+      <div className="activity" data-faded={faded && !selected}>
+        <h2>Recent activity</h2>
+        {activity.length > 0 ? (
+          <ul>
+            {activity.map((item) => (
+              <li key={item.eventId}>{item.text}</li>
+            ))}
+          </ul>
+        ) : (
+          <p className="note">
+            No shifts logged yet. The block fills in as people show up.
           </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+        )}
+        {runStatus ? <p className="note">{runStatus}</p> : null}
+        {selected ? (
+          <div className="inspect">
+            <h3>{selected.name}</h3>
+            <p>{describePlot(selected)}</p>
+          </div>
+        ) : null}
+      </div>
+
+      <Digest
+        digest={digest}
+        plots={plots}
+        open={digestOpen}
+        onClose={() => setDigestOpen(false)}
+      />
+
+      {overlayOpen ? (
+        <Overlay
+          onRunAgent={() => void runAgent()}
+          onDismiss={() => setOverlayOpen(false)}
+        />
+      ) : null}
+    </main>
+  )
 }
