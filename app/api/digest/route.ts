@@ -2,7 +2,6 @@ import {
   getEventsByIds,
   listEvents,
   listReflections,
-  listVolunteers,
 } from '@/lib/db/queries'
 import { deriveShifts } from '@/lib/db/derive'
 import type {
@@ -74,15 +73,23 @@ export async function GET() {
     listReflections(20),
     listEvents(2000),
   ])
-  // Touch volunteers so an empty database still reports coherently.
-  await listVolunteers()
 
-  const noticed: ReflectionWithSources[] = await Promise.all(
-    reflections.map(async (reflection) => ({
-      ...reflection,
-      sources: await getEventsByIds(reflection.sourceEventIds),
-    })),
+  // One query for every reflection's provenance, not one per reflection. The
+  // digest is polled every 15s and production talks to Turso over HTTP, so a
+  // fan-out of twenty round trips per poll is latency the demo would feel.
+  const sourceIds = [
+    ...new Set(reflections.flatMap((reflection) => reflection.sourceEventIds)),
+  ]
+  const sourceById = new Map(
+    (await getEventsByIds(sourceIds)).map((event) => [event.id, event]),
   )
+
+  const noticed: ReflectionWithSources[] = reflections.map((reflection) => ({
+    ...reflection,
+    sources: reflection.sourceEventIds
+      .map((id) => sourceById.get(id))
+      .filter((event): event is EventRecord => event !== undefined),
+  }))
 
   const body: DigestResponse = {
     generatedAt: now.toISOString(),
