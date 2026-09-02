@@ -10,7 +10,7 @@ import type {
 } from '@/lib/types'
 import Digest from '@/components/Digest'
 import Overlay from '@/components/Overlay'
-import { describePlot } from '@/components/scene-utils'
+import { describePlot, describeShift } from '@/components/scene-utils'
 
 const Block = dynamic(() => import('@/components/Block'), { ssr: false })
 
@@ -23,6 +23,7 @@ export default function Home() {
   const [overlayOpen, setOverlayOpen] = useState(true)
   const [digestOpen, setDigestOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [foodBankSelected, setFoodBankSelected] = useState(false)
   const [lightUpKeys, setLightUpKeys] = useState<Record<string, number>>({})
   const [runStatus, setRunStatus] = useState<string | null>(null)
   const [compact, setCompact] = useState(false)
@@ -144,7 +145,9 @@ export default function Home() {
   }, [refresh])
 
   const plots: Plot[] = state?.plots ?? []
+  const upcomingShifts = state?.upcomingShifts ?? []
   const selected = plots.find((plot) => plot.volunteerId === selectedId) ?? null
+  const nextShift = upcomingShifts[0] ?? null
   const activity = state?.recentActivity.slice(0, 3) ?? []
 
   return (
@@ -154,9 +157,18 @@ export default function Home() {
           plots={plots}
           lightUpKeys={lightUpKeys}
           selectedId={selectedId}
-          onSelect={setSelectedId}
+          onSelect={(id) => {
+            setSelectedId(id)
+            if (id !== null) setFoodBankSelected(false)
+          }}
           compact={compact}
           reducedMotion={reducedMotion}
+          upcomingShifts={upcomingShifts}
+          foodBankSelected={foodBankSelected}
+          onSelectFoodBank={() => {
+            setSelectedId(null)
+            setFoodBankSelected((value) => !value)
+          }}
         />
       </div>
 
@@ -176,7 +188,7 @@ export default function Home() {
         </button>
       </header>
 
-      <div className="activity" data-faded={faded && !selected}>
+      <div className="activity" data-faded={faded && !selected && !foodBankSelected}>
         <h2>Recent activity</h2>
         {activity.length > 0 ? (
           <ul>
@@ -194,6 +206,12 @@ export default function Home() {
           <div className="inspect">
             <h3>{selected.name}</h3>
             <p>{describePlot(selected)}</p>
+          </div>
+        ) : null}
+        {foodBankSelected && nextShift ? (
+          <div className="inspect">
+            <h3>The food bank</h3>
+            <p>{describeShift(nextShift)}</p>
           </div>
         ) : null}
       </div>

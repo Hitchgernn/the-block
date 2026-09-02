@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { Plot } from '@/lib/types'
+import type { Plot, Shift } from '@/lib/types'
 
 /** docs/design.md section 3. --lamp only ever means "someone showed up". */
 export const PALETTE = {
@@ -16,6 +16,10 @@ export const PALETTE = {
 /** Foundation slabs sit between the empty-lot tone and a finished wall. */
 export const SLAB = '#b6b2ab'
 export const ROAD = '#22303f'
+/** Street furniture. Deliberately outside the palette's warm end: none of it
+ *  is allowed to glow, because --lamp only ever means someone showed up. */
+export const KERB = '#46566b'
+export const MARKING = '#5f6d80'
 
 const LAMP = new THREE.Color(PALETTE.lamp)
 const LAMP_SOFT = new THREE.Color(PALETTE.lampSoft)
@@ -108,12 +112,33 @@ export interface Placement {
   z: number
 }
 
-/** A grid of lots split by one cross street each way, then centred. */
-export function layoutPlots(plots: Plot[]): {
+/** How far in front of the block the food bank sits, across the near street. */
+export const FORECOURT_DEPTH = 5.4
+
+export interface BlockLayout {
   placements: Placement[]
+  /** Extent of the housing grid alone. */
   width: number
   depth: number
-} {
+  /** Centre line of each cross street. */
+  road: { x: number; z: number }
+  /** Where the food bank stands, facing the block. */
+  foodBank: { x: number; z: number }
+  /** Grid plus the food bank, so the camera can frame everything. */
+  sceneDepth: number
+}
+
+/**
+ * A grid of lots split by one cross street each way, then centred, with the
+ * food bank set back in front of it.
+ *
+ * The road offsets are returned from here rather than recomputed elsewhere.
+ * They used to live in a separate roadLines() that hardcoded `rowBreak = 1`
+ * while this function used `floor(rows / 2)` — so with four rows of plots the
+ * cross street was painted a whole lot away from the gap it belonged in. One
+ * owner for the grid means the two halves cannot disagree again.
+ */
+export function layoutPlots(plots: Plot[]): BlockLayout {
   const rows = Math.max(1, Math.ceil(plots.length / COLS))
   const cols = Math.min(COLS, plots.length)
   const colBreak = Math.floor(COLS / 2)
@@ -130,15 +155,16 @@ export function layoutPlots(plots: Plot[]): {
     return { plot, x, z }
   })
 
-  return { placements, width, depth }
-}
-
-export function roadLines(width: number, depth: number) {
-  const colBreak = Math.floor(COLS / 2)
-  const rowBreak = 1
   return {
-    x: colBreak * LOT + ROAD_GAP / 2 - width / 2,
-    z: rowBreak * LOT + ROAD_GAP / 2 - depth / 2,
+    placements,
+    width,
+    depth,
+    road: {
+      x: colBreak * LOT + ROAD_GAP / 2 - width / 2,
+      z: rowBreak * LOT + ROAD_GAP / 2 - depth / 2,
+    },
+    foodBank: { x: 0, z: -depth / 2 - FORECOURT_DEPTH },
+    sceneDepth: depth + FORECOURT_DEPTH * 2,
   }
 }
 
@@ -211,4 +237,27 @@ export function describePlot(plot: Plot): string {
     parts.push(`last here ${shortDate(plot.lastActiveAt)}`)
   }
   return `${parts.join(', ')}.`
+}
+
+/**
+ * The forecourt sentence, matching the phrasing the digest uses for the same
+ * shift so the two surfaces never word it differently. design.md section 7:
+ * plain verbs, sentence case, no drama about a gap.
+ */
+export function describeShift(shift: Shift): string {
+  const when = `${shift.slot} on ${shortDate(shift.startsAt)}`
+  if (shift.short === 0) {
+    return `${when} is covered. ${numberWord(shift.committed)} ${plural(
+      shift.committed,
+      'person',
+      'people',
+    )} coming.`
+  }
+  return `${when} is short ${numberWord(shift.short)} ${plural(
+    shift.short,
+    'person',
+    'people',
+  )}. ${numberWord(shift.committed)} of ${numberWord(
+    shift.minimum,
+  )} committed so far.`
 }

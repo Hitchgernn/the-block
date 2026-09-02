@@ -4,9 +4,12 @@ import { useEffect, useMemo } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import type { Plot as PlotData } from '@/lib/types'
+import type { Plot as PlotData, Shift } from '@/lib/types'
 import Plot from '@/components/Plot'
-import { PALETTE, ROAD, layoutPlots, roadLines } from '@/components/scene-utils'
+import Street from '@/components/Street'
+import FoodBank from '@/components/FoodBank'
+import Forecourt from '@/components/Forecourt'
+import { PALETTE, layoutPlots } from '@/components/scene-utils'
 
 interface BlockProps {
   plots: PlotData[]
@@ -16,11 +19,14 @@ interface BlockProps {
   onSelect: (volunteerId: string | null) => void
   compact: boolean
   reducedMotion: boolean
+  /** Upcoming shifts, soonest first. The next one is drawn on the forecourt. */
+  upcomingShifts: Shift[]
+  foodBankSelected: boolean
+  onSelectFoodBank: () => void
 }
 
 /** Fixed isometric-ish direction. Only the distance ever changes. */
 const VIEW_DIR = new THREE.Vector3(0.642, 0.418, 0.642).normalize()
-const LOOK_AT = new THREE.Vector3(0, 1, 0)
 
 /**
  * Keeps the whole block in frame at any viewport without moving the angle.
@@ -29,10 +35,15 @@ const LOOK_AT = new THREE.Vector3(0, 1, 0)
 function Framing({
   width,
   depth,
+  centreZ,
   compact,
 }: {
   width: number
+  /** Full scene extent, grid plus the food bank in front of it. */
   depth: number
+  /** Middle of the scene along Z. The food bank sits well off the grid's
+   *  centre, so aiming at the grid alone left the composition lopsided. */
+  centreZ: number
   compact: boolean
 }) {
   const camera = useThree((state) => state.camera)
@@ -65,8 +76,9 @@ function Framing({
       (spanAcross * margin) / 2 / Math.tan(hFov / 2),
       (spanUp * margin) / 2 / Math.tan(vFov / 2),
     )
-    cam.position.copy(VIEW_DIR).multiplyScalar(distance).add(LOOK_AT)
-    cam.lookAt(LOOK_AT)
+    const lookAt = new THREE.Vector3(0, 1, centreZ)
+    cam.position.copy(VIEW_DIR).multiplyScalar(distance).add(lookAt)
+    cam.lookAt(lookAt)
     cam.updateProjectionMatrix()
 
     // Fog only ever eats the empty ground past the block, so it reads as sky.
@@ -74,7 +86,7 @@ function Framing({
       scene.fog.near = distance * 1.35
       scene.fog.far = distance * 2.45
     }
-  }, [camera, scene, size.width, size.height, width, depth, compact])
+  }, [camera, scene, size.width, size.height, width, depth, centreZ, compact])
 
   return null
 }
@@ -86,12 +98,22 @@ export default function Block({
   onSelect,
   compact,
   reducedMotion,
+  upcomingShifts,
+  foodBankSelected,
+  onSelectFoodBank,
 }: BlockProps) {
-  const { placements, width, depth } = useMemo(
+  const { placements, width, depth, road, foodBank, sceneDepth } = useMemo(
     () => layoutPlots(plots),
     [plots],
   )
-  const road = useMemo(() => roadLines(width, depth), [width, depth])
+
+  // The forecourt shows the next shift, which is the one the agent is about to
+  // act on. deriveShifts already returns them soonest first.
+  const nextShift = upcomingShifts[0] ?? null
+
+  // Content runs from behind the food bank to the front row of lots. Aim at the
+  // middle of that, not at the middle of the housing grid.
+  const centreZ = (foodBank.z - 2.2 + depth / 2) / 2
 
   return (
     <Canvas
@@ -104,7 +126,12 @@ export default function Block({
       <color attach="background" args={[PALETTE.dusk]} />
       <fog attach="fog" args={[PALETTE.dusk, 40, 90]} />
 
-      <Framing width={width} depth={depth} compact={compact} />
+      <Framing
+        width={width}
+        depth={sceneDepth}
+        centreZ={centreZ}
+        compact={compact}
+      />
 
       <hemisphereLight args={['#6d81a2', '#1a2534', 0.72]} />
       <ambientLight intensity={0.26} color="#61728c" />
@@ -120,14 +147,17 @@ export default function Block({
         <meshStandardMaterial color={PALETTE.duskDeep} roughness={1} />
       </mesh>
 
-      <mesh rotation-x={-Math.PI / 2} position={[road.x, 0.015, 0]}>
-        <planeGeometry args={[1.3, depth + 14]} />
-        <meshStandardMaterial color={ROAD} roughness={1} />
-      </mesh>
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.015, road.z]}>
-        <planeGeometry args={[width + 14, 1.3]} />
-        <meshStandardMaterial color={ROAD} roughness={1} />
-      </mesh>
+      <Street width={width} depth={depth} road={road} />
+
+      <FoodBank
+        position={[foodBank.x, 0, foodBank.z]}
+        selected={foodBankSelected}
+        onSelect={onSelectFoodBank}
+      />
+      <Forecourt
+        position={[foodBank.x, 0, foodBank.z + 3.4]}
+        shift={nextShift}
+      />
 
       {placements.map(({ plot, x, z }) => (
         <Plot
@@ -154,7 +184,7 @@ export default function Block({
         maxPolarAngle={Math.PI / 3.1}
         minAzimuthAngle={Math.PI / 4 - 0.5}
         maxAzimuthAngle={Math.PI / 4 + 0.5}
-        target={[0, 1, 0]}
+        target={[0, 1, centreZ]}
       />
     </Canvas>
   )
