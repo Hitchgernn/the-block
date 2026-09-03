@@ -1,6 +1,7 @@
 import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime'
 import { countEvents, listVolunteers } from '@/lib/db/queries'
 import { isLocalDb } from '@/lib/db/client'
+import { slackToken } from '@/lib/agent/tools/notify'
 
 /**
  * What is actually wired up, right now, on this deployment.
@@ -73,10 +74,15 @@ async function checkBedrock(): Promise<Check> {
 }
 
 function checkSlack(): Check {
-  const token = process.env.SLACK_BOT_TOKEN
+  // Shares the agent's own token check, so health cannot report Slack as ready
+  // on a placeholder the notifier would reject.
+  const token = slackToken()
   const channel = process.env.SLACK_CHANNEL_ID
   if (!token) {
-    return { ok: false, detail: 'SLACK_BOT_TOKEN unset — asks go to the outbox' }
+    return {
+      ok: false,
+      detail: 'SLACK_BOT_TOKEN unset or placeholder — asks go to the outbox',
+    }
   }
   if (!channel) return { ok: false, detail: 'SLACK_CHANNEL_ID is not set' }
   return { ok: true, detail: `token present, channel ${channel}` }

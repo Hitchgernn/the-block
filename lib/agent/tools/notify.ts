@@ -27,9 +27,21 @@ export interface AskDelivery {
 // Undefined = not looked at yet, null = looked and there is no token.
 let client: WebClient | null | undefined
 
+/**
+ * A real bot token is `xoxb-` plus a long body. `.env.example` ships the bare
+ * prefix as a placeholder, which is truthy — without this check the agent would
+ * attempt a live Slack call with a token that cannot work, and the health
+ * endpoint would report Slack as configured when it is not.
+ */
+export function slackToken(): string | null {
+  const token = process.env.SLACK_BOT_TOKEN?.trim()
+  if (!token || token.length < 20) return null
+  return token
+}
+
 function slack(): WebClient | null {
   if (client !== undefined) return client
-  const token = process.env.SLACK_BOT_TOKEN
+  const token = slackToken()
   client = token ? new WebClient(token) : null
   return client
 }
