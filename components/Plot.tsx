@@ -218,6 +218,32 @@ export default function Plot({
           </mesh>
         ) : null}
 
+        {/* Eaves. A roof that oversails its walls by a few centimetres casts a
+            line of shadow down the facade, which is most of what separates a
+            house from a box with a hat on. */}
+        {plot.stage >= 3 ? (
+          <mesh position={[0, 0.22 + height + 0.02, 0]}>
+            <boxGeometry args={[width + 0.34, 0.09, depth + 0.34]} />
+            <meshStandardMaterial color={SLAB} roughness={1} flatShading />
+          </mesh>
+        ) : null}
+
+        {/* A door, so the front of the house is legibly the front. Unlit: the
+            windows carry the meaning, and a second warm source per plot would
+            dilute what --lamp is saying. */}
+        {plot.stage >= 2 ? (
+          <group position={[0, 0.22, depth / 2 + 0.01]}>
+            <mesh position={[jitter.annexSide * width * 0.22, 0.46, 0]}>
+              <boxGeometry args={[0.42, 0.92, 0.05]} />
+              <meshStandardMaterial color="#4a4239" roughness={1} flatShading />
+            </mesh>
+            <mesh position={[jitter.annexSide * width * 0.22, 0.95, 0.04]}>
+              <boxGeometry args={[0.54, 0.07, 0.16]} />
+              <meshStandardMaterial color={SLAB} roughness={1} flatShading />
+            </mesh>
+          </group>
+        ) : null}
+
         {plot.stage >= 3 && jitter.hasChimney ? (
           <mesh position={[width * 0.24, 0.22 + height + 0.42, -depth * 0.2]}>
             <boxGeometry args={[0.17, 0.62, 0.17]} />
