@@ -13,7 +13,6 @@
 // brick-ish tone and kept flagging olive foliage as a clipped building, which
 // sent me chasing a framing bug that did not exist.
 
-import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 
 const file = process.argv[2]
