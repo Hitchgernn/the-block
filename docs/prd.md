@@ -129,7 +129,7 @@ Mapped to the five judging criteria:
 |------|-----------|
 | 13 days, solo, four workstreams | Ruthless scope. Core loop first, 3D last. See workflow.md gates. |
 | "This is just a scheduling app" | Lead the pitch with the pattern-recognition wedge, not the scheduling. Name the incumbents and say what they don't do. |
-| 3D eats all the time | Primitives only. No modeled assets. Hard timebox. If it slips, ship a 2D block grid instead — the agent is what's judged. |
+| 3D eats all the time | Volunteer plots stay primitives generated from data. Scenery comes from a finished CC0 pack rather than being modelled — see `design.md` §4. Hard timebox. If it slips, ship a 2D block grid instead — the agent is what's judged. |
 | Strands SDK learning curve | Day 1 is a spike, nothing else. Find the walls before committing to a design. |
 | Demo video left to the last day | Video is a scheduled deliverable with its own days, not a Sunday-night afterthought. |
 | Seeded data reads as fake | Be upfront in README and video. Seeded *inputs*, real *logic*. Honesty scores better than a discovered fudge. |

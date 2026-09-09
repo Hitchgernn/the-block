@@ -109,7 +109,12 @@ export function jitterFor(volunteerId: string): Jitter {
  * than a house was tall.
  */
 export const LOT = 4.0
-export const ROAD_GAP = 4.0
+/**
+ * Two tiles wide: one for the carriageway, one for the pavement and planting
+ * either side of it. At a single tile the lots sat hard against the kerb and
+ * there was a quarter of a unit to put a street tree in.
+ */
+export const ROAD_GAP = 8.0
 const COLS = 6
 
 export interface Placement {

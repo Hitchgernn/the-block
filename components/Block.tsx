@@ -7,6 +7,8 @@ import * as THREE from 'three'
 import type { Plot as PlotData, Shift } from '@/lib/types'
 import Plot from '@/components/Plot'
 import Street from '@/components/Street'
+import Props from '@/components/Props'
+import Skyline from '@/components/Skyline'
 import { preloadSceneAssets } from '@/components/scene-assets'
 import FoodBank from '@/components/FoodBank'
 import Forecourt from '@/components/Forecourt'
@@ -76,7 +78,7 @@ function Framing({
     // capture with 23 plots.
     // Verified against the edge-sampling check: nothing touches a viewport
     // edge at this margin with the food bank in frame.
-    const margin = compact ? 1.06 : 1.2
+    const margin = compact ? 1.1 : 1.34
     const distance = Math.max(
       (spanAcross * margin) / 2 / Math.tan(hFov / 2),
       (spanUp * margin) / 2 / Math.tan(vFov / 2),
@@ -88,8 +90,10 @@ function Framing({
 
     // Fog only ever eats the empty ground past the block, so it reads as sky.
     if (scene.fog instanceof THREE.Fog) {
-      scene.fog.near = distance * 1.35
-      scene.fog.far = distance * 2.45
+      // Far enough to leave the skyline as a readable silhouette rather than
+      // swallowing it; near enough that it still reads as distance.
+      scene.fog.near = distance * 1.05
+      scene.fog.far = distance * 3.2
     }
   }, [camera, scene, size.width, size.height, width, depth, centreZ, compact])
 
@@ -169,6 +173,8 @@ export default function Block({
       */}
       <Suspense fallback={null}>
         <Street layout={layout} />
+        <Props layout={layout} />
+        <Skyline layout={layout} />
       </Suspense>
 
       <FoodBank

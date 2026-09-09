@@ -96,7 +96,34 @@ Left-aligned throughout. No centered body text.
 
 ### Geometry rules
 
-Primitives only. In react-three-fiber: `<boxGeometry>`, `<cylinderGeometry>`, `<coneGeometry>`, `<planeGeometry>`. No imported models, no textures, no normal maps. Flat-shaded (`<meshLambertMaterial>`, or `<meshStandardMaterial roughness={1}>`).
+**Volunteer plots are primitives.** In react-three-fiber: `<boxGeometry>`,
+`<cylinderGeometry>`, `<coneGeometry>`, `<planeGeometry>`. Flat-shaded
+(`<meshStandardMaterial roughness={1}>`).
+
+**The world around them is a CC0 low-poly pack** (`public/models/`, 21 assets,
+728 KB) — roads, pavements, grass, trees, benches, lamps, cars, a bus shelter,
+and the towers on the horizon.
+
+*Revised during the build.* This section originally said "primitives only, no
+imported models", and `prd.md` §10 listed that as the mitigation for the risk
+*"3D eats all the time"*. The pack removed that risk rather than adding to it:
+it is untextured, one mesh and one material per asset, and it arrived finished.
+
+The split is deliberate and load-bearing. **A plot is a volunteer and its stage
+is derived from their completed shifts**, so plots stay primitives the code
+generates from data. Everything the pack supplies is scenery — it carries no
+state and means nothing. That keeps *if the scene shows a building, an event
+caused it* literally true.
+
+Two rules govern how the pack is used:
+
+- **Retint, never adopt.** The assets carry colour in `COLOR_0` vertex
+  attributes, and the pack's own palette is bright orange and blue. Materials
+  keep `vertexColors: true` but multiply a tint from §3 through them, so the
+  pack's shading survives and its hue does not. Flattening each asset to one
+  colour would turn every tree into a green blob.
+- **Nothing borrowed may glow.** Street lamps ship unlit. The skyline carries no
+  lit windows at all. `--lamp` means one thing and only earned light may use it.
 
 Buildings are assembled from stacked boxes with slight per-plot random rotation (±3°) and scale jitter so the block doesn't read as a spreadsheet. That jitter is the entire difference between "charming little town" and "bar chart in 3D."
 
