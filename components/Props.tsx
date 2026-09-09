@@ -2,7 +2,7 @@
 
 import { Instance, Instances } from '@react-three/drei'
 import type { AssetName } from '@/components/scene-assets'
-import { TILE, useSceneAsset } from '@/components/scene-assets'
+import { SURFACE_TOP, TILE, useSceneAsset } from '@/components/scene-assets'
 import type { BlockLayout } from '@/components/scene-utils'
 import { jitterFor, streetGrid } from '@/components/scene-utils'
 
@@ -49,6 +49,12 @@ function Scattered({
 /**
  * Street furniture and planting.
  *
+ * Every prop is lifted onto the surface it actually stands on. The pack's
+ * ground tiles are not flat and not equal — pavement stands 0.48 above y=0,
+ * the carriageway 0.28, plaza paving 0.53 — so a prop placed at y=0 sinks by
+ * that much. The benches were showing only their top slats and the planters
+ * only their flowers before this. See SURFACE_TOP in scene-assets.ts.
+ *
  * Everything here is placed deterministically. jitterFor() hashes a string into
  * a stable pseudo-random set, which is the same trick the plots use to avoid
  * reading as a spreadsheet — a town that reshuffled between renders would also
@@ -62,6 +68,10 @@ function Scattered({
  * Nothing here moves either: design.md section 4 allows one orchestrated
  * moment, and it belongs to a light coming up when somebody shows up.
  */
+const PAVEMENT = SURFACE_TOP.sidewalk
+const ROAD_TOP = SURFACE_TOP.road
+const PLAZA = SURFACE_TOP.plaza
+
 export default function Props({ layout }: PropsProps) {
   const grid = streetGrid(layout)
   const { road, width, depth, foodBank } = layout
@@ -92,7 +102,7 @@ export default function Props({ layout }: PropsProps) {
       const kind = kinds[Math.floor(Math.abs(seed.rotation) * 1000) % kinds.length]
       trees[kind].push({
         key: `t-${x}-${z}`,
-        pos: [x + seed.offsetX * 0.6, 0, z + seed.offsetZ * 0.6],
+        pos: [x + seed.offsetX * 0.6, PAVEMENT, z + seed.offsetZ * 0.6],
         rotY: seed.rotation * 6,
         scale: 0.8 + seed.heightScale * 0.25,
       })
@@ -106,7 +116,7 @@ export default function Props({ layout }: PropsProps) {
     if (seed.depthScale < 1.0) continue
     trees.street.push({
       key: `xt-${x}`,
-      pos: [x + seed.offsetX, 0, road.z + TILE * 0.78],
+      pos: [x + seed.offsetX, PAVEMENT, road.z + TILE * 0.78],
       rotY: seed.rotation * 6,
       scale: 0.85 + seed.heightScale * 0.2,
     })
@@ -116,37 +126,37 @@ export default function Props({ layout }: PropsProps) {
   for (const z of grid.vertical) {
     if (Math.abs(z % (TILE * 2)) > 0.01) continue
     if (Math.abs(z - road.z) < TILE) continue
-    lamps.push({ key: `lz-${z}`, pos: [road.x + TILE * 0.74, 0, z] })
+    lamps.push({ key: `lz-${z}`, pos: [road.x + TILE * 0.74, PAVEMENT, z] })
   }
   for (const x of grid.horizontal) {
     if (Math.abs(x % (TILE * 2)) > 0.01) continue
     if (Math.abs(x - road.x) < TILE) continue
     lamps.push({
       key: `lx-${x}`,
-      pos: [x, 0, road.z + TILE * 0.74],
+      pos: [x, PAVEMENT, road.z + TILE * 0.74],
       rotY: Math.PI / 2,
     })
   }
 
   // A place to sit at the junction, and one facing the food bank.
-  benches.push({ key: 'b1', pos: [road.x + TILE * 0.7, 0, road.z + TILE * 1.4] })
+  benches.push({ key: 'b1', pos: [road.x + TILE * 0.7, PAVEMENT, road.z + TILE * 1.4] })
   benches.push({
     key: 'b2',
-    pos: [foodBank.x - TILE * 1.1, 0, grid.avenueZ + TILE * 0.7],
+    pos: [foodBank.x - TILE * 1.1, PAVEMENT, grid.avenueZ + TILE * 0.7],
     rotY: Math.PI,
   })
-  planters.push({ key: 'p1', pos: [road.x - TILE * 0.7, 0, road.z + TILE * 1.3] })
+  planters.push({ key: 'p1', pos: [road.x - TILE * 0.7, PAVEMENT, road.z + TILE * 1.3] })
   planters.push({
     key: 'p2',
-    pos: [foodBank.x + TILE * 1.2, 0, grid.avenueZ + TILE * 0.7],
+    pos: [foodBank.x + TILE * 1.2, PAVEMENT, grid.avenueZ + TILE * 0.7],
   })
 
   // A few cars parked along the kerb. Parked, never driving — see the note on
   // motion above.
   const parking: [number, number, number][] = [
-    [road.x + TILE * 0.55, 0, -depth / 2 + TILE * 0.5],
-    [road.x - TILE * 0.55, 0, depth / 2 - TILE * 1.2],
-    [width / 2 - TILE * 0.8, 0, road.z + TILE * 0.55],
+    [road.x + TILE * 0.55, ROAD_TOP, -depth / 2 + TILE * 0.5],
+    [road.x - TILE * 0.55, ROAD_TOP, depth / 2 - TILE * 1.2],
+    [width / 2 - TILE * 0.8, ROAD_TOP, road.z + TILE * 0.55],
   ]
   parking.forEach((pos, index) => {
     cars.push({ key: `c${index}`, pos, rotY: index === 2 ? Math.PI / 2 : 0 })
@@ -180,16 +190,16 @@ export default function Props({ layout }: PropsProps) {
     const target = i % 2 === 0 ? trees.apple : trees.conifer
     target.push({
       key: `pt${i}`,
-      pos: [parkX + dx * TILE, 0, parkZ + dz * TILE],
+      pos: [parkX + dx * TILE, PLAZA, parkZ + dz * TILE],
       rotY: seed.rotation * 6,
       scale: 0.85 + seed.heightScale * 0.2,
     })
   }
-  benches.push({ key: 'pb1', pos: [parkX - TILE * 0.4, 0, parkZ], rotY: Math.PI / 2 })
-  benches.push({ key: 'pb2', pos: [parkX + TILE * 0.4, 0, parkZ], rotY: -Math.PI / 2 })
-  planters.push({ key: 'pp1', pos: [parkX, 0, parkZ - TILE * 0.75] })
-  planters.push({ key: 'pp2', pos: [parkX, 0, parkZ + TILE * 0.75] })
-  lamps.push({ key: 'pl1', pos: [parkX + TILE * 0.95, 0, parkZ - TILE * 0.6] })
+  benches.push({ key: 'pb1', pos: [parkX - TILE * 0.4, PLAZA, parkZ], rotY: Math.PI / 2 })
+  benches.push({ key: 'pb2', pos: [parkX + TILE * 0.4, PLAZA, parkZ], rotY: -Math.PI / 2 })
+  planters.push({ key: 'pp1', pos: [parkX, PLAZA, parkZ - TILE * 0.75] })
+  planters.push({ key: 'pp2', pos: [parkX, PLAZA, parkZ + TILE * 0.75] })
+  lamps.push({ key: 'pl1', pos: [parkX + TILE * 0.95, PLAZA, parkZ - TILE * 0.6] })
 
   return (
     <group>
@@ -207,7 +217,7 @@ export default function Props({ layout }: PropsProps) {
         placements={[
           {
             key: 'shelter',
-            pos: [foodBank.x + TILE * 2.2, 0, grid.avenueZ + TILE * 0.8],
+            pos: [foodBank.x + TILE * 2.2, PAVEMENT, grid.avenueZ + TILE * 0.8],
             rotY: Math.PI,
           },
         ]}
