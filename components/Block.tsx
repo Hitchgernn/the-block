@@ -9,10 +9,10 @@ import Plot from '@/components/Plot'
 import Street from '@/components/Street'
 import Props from '@/components/Props'
 import Skyline from '@/components/Skyline'
-import { preloadSceneAssets } from '@/components/scene-assets'
+import { TILE, preloadSceneAssets } from '@/components/scene-assets'
 import FoodBank from '@/components/FoodBank'
 import Forecourt from '@/components/Forecourt'
-import { PALETTE, layoutPlots } from '@/components/scene-utils'
+import { KERB, PALETTE, layoutPlots } from '@/components/scene-utils'
 
 interface BlockProps {
   plots: PlotData[]
@@ -29,6 +29,10 @@ interface BlockProps {
 }
 
 preloadSceneAssets()
+
+const PLINTH_HEIGHT = 1.6
+/** Darker than the ground it stands on, so the edge reads without a highlight. */
+const PLINTH_SIDE = '#16202e'
 
 /** Fixed isometric-ish direction. Only the distance ever changes. */
 const VIEW_DIR = new THREE.Vector3(0.642, 0.418, 0.642).normalize()
@@ -78,7 +82,9 @@ function Framing({
     // capture with 23 plots.
     // Verified against the edge-sampling check: nothing touches a viewport
     // edge at this margin with the food bank in frame.
-    const margin = compact ? 1.1 : 1.34
+    // Framed a touch wide so the plinth's edge stays in shot — the thickness
+    // is the whole point of having one.
+    const margin = compact ? 1.12 : 1.42
     const distance = Math.max(
       (spanAcross * margin) / 2 / Math.tan(hFov / 2),
       (spanUp * margin) / 2 / Math.tan(vFov / 2),
@@ -124,6 +130,12 @@ export default function Block({
 
   // Zoom bounds are tied to the block's own size rather than fixed numbers, so
   // they stay sensible whatever the volunteer count does to the layout.
+  // Sized to hold the block, its streets and the grass rim around them.
+  const plinth = {
+    width: width + TILE * 4,
+    depth: depth + TILE * 4 + Math.abs(foodBank.z + depth / 2) * 1.1,
+  }
+
   const span = (width + depth) / Math.SQRT2
   const zoom = { min: span * 0.45, max: span * 2.2 }
 
@@ -168,6 +180,32 @@ export default function Block({
         <planeGeometry args={[420, 420]} />
         <meshStandardMaterial color={PALETTE.duskDeep} roughness={1} />
       </mesh>
+
+      {/*
+        The block stands on a plinth with visible thickness rather than lying
+        flat on the ground plane. Every one of the reference images does this —
+        it is what makes a low-poly scene read as a made object instead of tiles
+        floating on nothing, and it gives the streets somewhere to stop.
+
+        The skyline stays out on the ground plane beyond it, so the town sits on
+        raised ground with the city below and behind — the composition in
+        reference-1 and reference-3.
+      */}
+      <group position={[0, 0, centreZ]}>
+        <mesh position={[0, -PLINTH_HEIGHT / 2, 0]}>
+          <boxGeometry
+            args={[plinth.width, PLINTH_HEIGHT, plinth.depth]}
+          />
+          <meshStandardMaterial color={PLINTH_SIDE} roughness={1} flatShading />
+        </mesh>
+        {/* A narrow lip catches the key light and reads as a kerb edge. */}
+        <mesh position={[0, -0.06, 0]}>
+          <boxGeometry
+            args={[plinth.width + 0.5, 0.12, plinth.depth + 0.5]}
+          />
+          <meshStandardMaterial color={KERB} roughness={1} flatShading />
+        </mesh>
+      </group>
 
       {/*
         Everything that loads a GLB goes inside Suspense.
