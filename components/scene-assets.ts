@@ -119,11 +119,25 @@ export function useSceneAsset(name: AssetName): SceneAsset | null {
     const mesh = extract(gltf.scene)
     if (!mesh) return null
 
-    // The pack authors meshes around their own origin; bake the node transform
-    // in once so callers can position by the grid rather than by trial.
+    // Bake the node transform in once so callers can position by the grid
+    // rather than by trial.
     const geometry = mesh.geometry.clone()
     mesh.updateWorldMatrix(true, false)
     geometry.applyMatrix4(mesh.matrixWorld)
+
+    // Then sit the asset on the ground.
+    //
+    // Every node in this pack is translated by exactly minus half its own
+    // height, which centres the mesh on the origin. Baking that transform and
+    // placing at y=0 therefore buried half of everything: the cars and benches
+    // were entirely under the road, the street lamps lost half their poles, and
+    // the food bank sat 3.8 units into the ground. Dropping the bounding box to
+    // zero makes "position at y=0" mean "resting on the ground", which is what
+    // every caller already assumed.
+    geometry.computeBoundingBox()
+    const minY = geometry.boundingBox?.min.y ?? 0
+    if (minY !== 0) geometry.translate(0, -minY, 0)
+
     geometry.computeVertexNormals()
 
     const material = new THREE.MeshStandardMaterial({
