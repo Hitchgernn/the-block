@@ -171,21 +171,28 @@ export default function Block({
         fog and framing stay outside so the scene has its dusk ground from the
         first frame rather than flashing white while assets arrive.
       */}
+      {/*
+        Everything that touches a GLB lives inside this boundary. useGLTF
+        suspends, and a suspending component with no boundary above it unmounts
+        the entire subtree — including <color attach="background"> — which
+        renders the canvas plain white and throws no error to explain itself.
+        Adding an asset to a component out here is the way this breaks.
+      */}
       <Suspense fallback={null}>
         <Street layout={layout} />
         <Props layout={layout} />
         <Skyline layout={layout} />
+        <FoodBank
+          position={[foodBank.x, 0, foodBank.z]}
+          selected={foodBankSelected}
+          onSelect={onSelectFoodBank}
+        />
+        <Forecourt
+          position={[foodBank.x, 0, foodBank.z + 5.2]}
+          shift={nextShift}
+        />
       </Suspense>
 
-      <FoodBank
-        position={[foodBank.x, 0, foodBank.z]}
-        selected={foodBankSelected}
-        onSelect={onSelectFoodBank}
-      />
-      <Forecourt
-        position={[foodBank.x, 0, foodBank.z + 3.4]}
-        shift={nextShift}
-      />
 
       {placements.map(({ plot, x, z }) => (
         <Plot

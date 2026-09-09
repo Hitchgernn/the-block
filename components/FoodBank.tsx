@@ -3,6 +3,8 @@
 import { useRef } from 'react'
 import type * as THREE from 'three'
 import { KERB, PALETTE, SLAB } from '@/components/scene-utils'
+import { Instances, Instance } from '@react-three/drei'
+import { TILE, useSceneAsset } from '@/components/scene-assets'
 
 interface FoodBankProps {
   position: [number, number, number]
@@ -10,9 +12,35 @@ interface FoodBankProps {
   onSelect: () => void
 }
 
-const WIDTH = 6.2
-const DEPTH = 3.2
-const HEIGHT = 2.1
+/** Footprint of shop-awning-01, used to place the yard behind it. */
+const DEPTH = 6.26
+const HEIGHT = 7.65
+
+/** Single-instance scenery, so it renders as a plain mesh rather than a batch. */
+function Shell() {
+  const loaded = useSceneAsset('shopAwning')
+  if (!loaded) return null
+  return <mesh geometry={loaded.geometry} material={loaded.material} />
+}
+
+function Paving({ selected }: { selected: boolean }) {
+  const loaded = useSceneAsset('plazaPaving')
+  if (!loaded) return null
+  return (
+    <Instances
+      geometry={loaded.geometry}
+      material={loaded.material}
+      limit={9}
+      frustumCulled={false}
+    >
+      {[-TILE, 0, TILE].map((x) =>
+        [TILE * 0.75, TILE * 1.75].map((z) => (
+          <Instance key={`${x}-${z}`} position={[x, selected ? 0.02 : 0, z]} />
+        )),
+      )}
+    </Instances>
+  )
+}
 
 /**
  * The one building on the block that is not somebody's plot.
@@ -31,46 +59,21 @@ export default function FoodBank({ position, selected, onSelect }: FoodBankProps
 
   return (
     <group position={position}>
-      {/* Forecourt slab, so the building sits on ground of its own. */}
-      <mesh
-        position={[0, 0.03, 1.9]}
-        rotation-x={-Math.PI / 2}
+      {/* Paved forecourt, so the building stands on ground of its own and the
+          figures waiting for the next shift have somewhere to wait. */}
+      <group
         onClick={(event) => {
           event.stopPropagation()
           onSelect()
         }}
       >
-        <planeGeometry args={[WIDTH + 1.6, 4.2]} />
-        <meshStandardMaterial color={selected ? SLAB : '#33435c'} roughness={1} />
-      </mesh>
+        <Paving selected={selected} />
+      </group>
 
-      <mesh position={[0, 0.09, 0]}>
-        <boxGeometry args={[WIDTH + 0.5, 0.18, DEPTH + 0.5]} />
-        <meshStandardMaterial color={SLAB} roughness={1} />
-      </mesh>
-
-      <mesh position={[0, 0.18 + HEIGHT / 2, 0]}>
-        <boxGeometry args={[WIDTH, HEIGHT, DEPTH]} />
-        <meshStandardMaterial color={PALETTE.stone} roughness={1} flatShading />
-      </mesh>
-
-      {/* A low parapet instead of a pitched roof — civic, not domestic. */}
-      <mesh position={[0, 0.18 + HEIGHT + 0.11, 0]}>
-        <boxGeometry args={[WIDTH + 0.34, 0.22, DEPTH + 0.34]} />
-        <meshStandardMaterial color={KERB} roughness={1} flatShading />
-      </mesh>
-
-      {/* Loading canopy over the entrance, facing the block. */}
-      <mesh position={[0, 0.18 + 1.42, DEPTH / 2 + 0.6]}>
-        <boxGeometry args={[3.4, 0.12, 1.3]} />
-        <meshStandardMaterial color={KERB} roughness={1} flatShading />
-      </mesh>
-      {[-1.5, 1.5].map((x) => (
-        <mesh key={x} position={[x, 0.18 + 0.71, DEPTH / 2 + 1.15]}>
-          <cylinderGeometry args={[0.06, 0.06, 1.42, 6]} />
-          <meshStandardMaterial color={KERB} roughness={1} />
-        </mesh>
-      ))}
+      {/* The shop from the pack stands in for the hand-built box, parapet and
+          canopy. It is scenery: the food bank is the one building here nobody
+          earned, so it carries no growth stage and no derived state. */}
+      <Shell />
 
       {/* Doorway and windows. */}
       <mesh position={[0, 0.18 + 0.55, DEPTH / 2 + 0.02]}>
@@ -163,10 +166,10 @@ export default function FoodBank({ position, selected, onSelect }: FoodBankProps
 
       <pointLight
         ref={lightRef}
-        position={[0, 0.18 + 1.5, DEPTH / 2 + 1.1]}
+        position={[0, 2.2, DEPTH / 2 + 0.4]}
         color={PALETTE.lamp}
-        intensity={1.5}
-        distance={7}
+        intensity={1.15}
+        distance={8}
         decay={2}
       />
     </group>
