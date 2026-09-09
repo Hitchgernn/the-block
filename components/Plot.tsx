@@ -176,6 +176,30 @@ export default function Plot({
         />
       </mesh>
 
+      {/*
+        An empty lot is marked out rather than left blank.
+        design.md section 7 asks empty lots to read as an invitation, and a bare
+        pad reads as absence — worse, it was nearly the same tone as a stage-1
+        foundation, so "nobody has built here yet" and "somebody has started"
+        looked alike. A surveyed edge says the ground is spoken for and waiting,
+        which is exactly what a volunteer who has joined but not yet come is.
+      */}
+      {plot.stage === 0 ? (
+        <group position={[0, 0.13, 0]} rotation-y={jitter.padRotation}>
+          {([[0, 1], [0, -1], [1, 0], [-1, 0]] as const).map(([ax, az]) => (
+            <mesh
+              key={`${ax}${az}`}
+              position={[ax * 1.42, 0, az * 1.42]}
+            >
+              <boxGeometry
+                args={[ax === 0 ? 2.9 : 0.09, 0.05, az === 0 ? 2.9 : 0.09]}
+              />
+              <meshStandardMaterial color={SLAB} roughness={1} />
+            </mesh>
+          ))}
+        </group>
+      ) : null}
+
       <group
         position={[jitter.offsetX, slabTop, jitter.offsetZ]}
         rotation-y={jitter.rotation}
