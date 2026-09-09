@@ -155,8 +155,17 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
   const colBreak = Math.floor(COLS / 2)
   const rowBreak = Math.max(1, Math.floor(rows / 2))
 
-  const width = cols * LOT + ROAD_GAP
-  const depth = rows * LOT + ROAD_GAP
+  // The streets are laid for a full block even when few volunteers exist yet.
+  // Sizing the footprint off the actual count collapsed an empty database to a
+  // block with no extent, which pulled the camera in on top of the food bank
+  // and stood the skyline right against the lens. Empty lots are an invitation
+  // (design.md section 7), so the town should look like it is waiting rather
+  // than like it is broken.
+  const gridCols = Math.max(4, cols)
+  const gridRows = Math.max(3, rows)
+
+  const width = gridCols * LOT + ROAD_GAP
+  const depth = gridRows * LOT + ROAD_GAP
 
   const placements = plots.map((plot, index) => {
     const col = index % COLS
