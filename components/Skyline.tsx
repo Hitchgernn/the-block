@@ -50,7 +50,11 @@ function Towers({ asset, towers }: { asset: AssetName; towers: Tower[] }) {
  */
 export default function Skyline({ layout }: SkylineProps) {
   const { width, depth } = layout
-  const radius = Math.max(width, depth) * 1.4
+  // Far enough out, and low enough, that the city reads as distance rather
+  // than as a wall across the top of the frame. Measured: at 1.4x radius and
+  // full scale, 989 of 1400 pixels along the top edge were tower rather than
+  // sky, so the skyline was being sliced off instead of receding.
+  const radius = Math.max(width, depth) * 1.95
 
   const apartments: Tower[] = []
   const skyscrapers: Tower[] = []
@@ -68,7 +72,7 @@ export default function Skyline({ layout }: SkylineProps) {
     // default position and the block itself.
     if (facing > 0.45) continue
 
-    const distance = radius * (1 + seed.heightScale * 0.35) + Math.abs(seed.offsetX) * 4
+    const distance = radius * (1 + seed.heightScale * 0.3) + Math.abs(seed.offsetX) * 5
     const pos: [number, number, number] = [
       Math.cos(angle) * distance,
       0,
@@ -78,7 +82,7 @@ export default function Skyline({ layout }: SkylineProps) {
       key: `sky-${i}`,
       pos,
       rotY: seed.rotation * 8,
-      scale: 0.7 + seed.heightScale * 0.4,
+      scale: 0.54 + seed.heightScale * 0.3,
     }
 
     const pick = Math.floor(Math.abs(seed.offsetZ) * 997) % 3
