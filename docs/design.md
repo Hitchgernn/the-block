@@ -117,13 +117,29 @@ Driven entirely by derived state from the event log. Each stage is additive geom
 
 ### Camera and motion
 
-Fixed isometric-ish angle, gentle orbit on drag, no free camera. One orchestrated moment only: when a new event lands, that plot's light comes up over ~1.2s with a soft ease. Everything else is static.
+Fixed elevation, free rotation, bounded zoom, no free camera. One orchestrated moment only: when a new event lands, that plot's light comes up over ~1.2s with a soft ease. Everything else is static.
+
+*Revised during the build.* Rotation was originally clamped to a 57° arc around
+the default corner, and zoom was off. The arc was not a design decision — plots
+only carried windows on their +Z and +X faces, so any wider swing showed a
+street of blank dark boxes and lost "every light is someone who showed up".
+Windows now sit on all four faces, so the block can be walked around.
+
+Elevation stays clamped and panning stays off: you cannot get under the ground
+plane, look straight down, or lose the block offscreen. That is what "no free
+camera" was protecting, and it still holds. Zoom is bounded rather than absent,
+because the figures waiting outside the food bank are the one thing a viewer
+should be able to count, and at the default distance they are too small to.
 
 Do not add ambient drifting, floating particles, or per-element hover transitions. One moment of motion that means something beats scattered effects.
 
 ### Mobile
 
-Same scene, tighter camera framing, no orbit control (drag conflicts with page scroll). Overlays stack vertically. This is why it's a web app — one build, both surfaces.
+Same scene, a wider lens so the block still fills a portrait viewport, and the same orbit and zoom as desktop. Overlays stack vertically. This is why it's a web app — one build, both surfaces.
+
+*Revised during the build.* Orbit was originally disabled on mobile to avoid
+fighting page scroll. There is no page scroll: `.shell` is `position: fixed`
+with `overflow: hidden`, so the gesture has nothing to conflict with.
 
 ## 5. Entry surface
 

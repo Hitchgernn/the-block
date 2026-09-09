@@ -117,6 +117,11 @@ export default function Block({
   // middle of that, not at the middle of the housing grid.
   const centreZ = (foodBank.z - 2.2 + depth / 2) / 2
 
+  // Zoom bounds are tied to the block's own size rather than fixed numbers, so
+  // they stay sensible whatever the volunteer count does to the layout.
+  const span = (width + depth) / Math.SQRT2
+  const zoom = { min: span * 0.45, max: span * 2.2 }
+
   return (
     <Canvas
       flat
@@ -176,19 +181,32 @@ export default function Block({
         />
       ))}
 
-      {/* Gentle orbit on drag, never a free camera. Off on small screens
-          because that drag gesture belongs to the page. */}
+      {/*
+        Walk around the block, but never fly over it.
+
+        Rotation is unrestricted now that plots carry windows on all four faces
+        (see windowSlots in Plot.tsx) — the old 57 degree arc existed because the
+        back of every building was blank, not because the design called for it.
+
+        Elevation stays clamped and panning stays off, so design.md section 4's
+        "fixed isometric-ish angle, no free camera" still holds: you cannot get
+        under the ground plane, look straight down, or lose the block offscreen.
+
+        Zoom is bounded rather than disabled. The forecourt figures are the one
+        thing a viewer should be able to count, and at the default distance they
+        are too small to count.
+      */}
       <OrbitControls
-        enabled={!compact}
         enablePan={false}
-        enableZoom={false}
+        enableZoom
+        zoomSpeed={0.6}
+        minDistance={zoom.min}
+        maxDistance={zoom.max}
         enableDamping
         dampingFactor={0.08}
         rotateSpeed={0.35}
         minPolarAngle={Math.PI / 4.4}
         maxPolarAngle={Math.PI / 3.1}
-        minAzimuthAngle={Math.PI / 4 - 0.5}
-        maxAzimuthAngle={Math.PI / 4 + 0.5}
         target={[0, 1, centreZ]}
       />
     </Canvas>

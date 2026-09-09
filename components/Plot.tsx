@@ -29,24 +29,41 @@ function easeOutCubic(t: number): number {
 }
 
 /** Window positions per stage: front face first, then a side. */
+/**
+ * Windows on all four faces.
+ *
+ * They used to sit only on +Z and +X, which is why the camera was pinned to a
+ * 57 degree arc looking at that corner — swing past it and every building was a
+ * blank dark box, and "every light is someone who showed up" disappeared. Four
+ * faces is what lets the block be walked around.
+ *
+ * The back faces get fewer windows than the front, so the building still has an
+ * obvious front and the town does not read as symmetrical.
+ */
 function windowSlots(stage: number, w: number, d: number, h: number) {
   const slots: { pos: [number, number, number]; rotY: number }[] = []
   const front = d / 2 + 0.008
-  const side = w / 2 + 0.008
+  const back = -d / 2 - 0.008
+  const right = w / 2 + 0.008
+  const left = -w / 2 - 0.008
   const lower = h * 0.34
   const upper = h * 0.72
 
   if (stage >= 2) {
     slots.push({ pos: [-w * 0.22, lower, front], rotY: 0 })
     slots.push({ pos: [w * 0.22, lower, front], rotY: 0 })
+    slots.push({ pos: [w * 0.05, lower, back], rotY: 0 })
   }
   if (stage >= 3) {
-    slots.push({ pos: [side, lower, d * 0.18], rotY: Math.PI / 2 })
+    slots.push({ pos: [right, lower, d * 0.18], rotY: Math.PI / 2 })
+    slots.push({ pos: [left, lower, -d * 0.16], rotY: Math.PI / 2 })
   }
   if (stage >= 4) {
     slots.push({ pos: [-w * 0.22, upper, front], rotY: 0 })
     slots.push({ pos: [w * 0.22, upper, front], rotY: 0 })
-    slots.push({ pos: [side, upper, -d * 0.18], rotY: Math.PI / 2 })
+    slots.push({ pos: [right, upper, -d * 0.18], rotY: Math.PI / 2 })
+    slots.push({ pos: [-w * 0.2, upper, back], rotY: 0 })
+    slots.push({ pos: [left, upper, d * 0.2], rotY: Math.PI / 2 })
   }
   return slots
 }
