@@ -46,6 +46,17 @@ const THU_PM = 'Thursday 5pm'
 /** The two regulars whose drift causes the whole pattern. */
 const DRIFTERS = ['v-maria', 'v-james']
 
+/**
+ * Signed up, not yet been.
+ *
+ * Every other seeded volunteer has worked at least one shift, which meant the
+ * scene never showed a stage-0 plot and design.md's "empty lots are an
+ * invitation" was a rule with nothing to apply it to. Real rosters always carry
+ * a few people who joined and have not made it in yet — and they are exactly
+ * the people the agent might reasonably ask.
+ */
+const NEWCOMERS = ['v-dara', 'v-kwame']
+
 const VOLUNTEERS: SeedVolunteer[] = [
   { id: 'v-maria',    name: 'Maria Ocampo',      slackHandle: '@maria',    preferredSlots: [SAT_AM],         reliability: 0.95 },
   { id: 'v-james',    name: 'James Whitfield',   slackHandle: '@james',    preferredSlots: [SAT_AM],         reliability: 0.92 },
@@ -69,6 +80,8 @@ const VOLUNTEERS: SeedVolunteer[] = [
   { id: 'v-ingrid',   name: 'Ingrid Solberg',    slackHandle: '@ingrid',   preferredSlots: [SAT_PM],         reliability: 0.65 },
   { id: 'v-noor',     name: 'Noor Al-Amin',      slackHandle: '@noor',     preferredSlots: [SAT_AM],         reliability: 0.82 },
   { id: 'v-wen',      name: 'Wen Zhao',          slackHandle: '@wen',      preferredSlots: [TUE_PM],         reliability: 0.85 },
+  { id: 'v-dara',     name: 'Dara Okonjo',       slackHandle: '@dara',     preferredSlots: [SAT_AM],         reliability: 0.0  },
+  { id: 'v-kwame',    name: 'Kwame Boateng',     slackHandle: '@kwame',    preferredSlots: [SAT_AM, TUE_PM], reliability: 0.0  },
   { id: 'v-theo',     name: 'Theo Andersson',    slackHandle: '@theo',     preferredSlots: [SAT_AM],         reliability: 0.78 },
 ]
 
@@ -132,6 +145,10 @@ function attends(
   weekIndex: number,
   random: () => number,
 ): boolean {
+  // Newcomers have never worked a shift. They are on the roster and on the
+  // block; their lot is an empty one waiting for them.
+  if (NEWCOMERS.includes(volunteer.id)) return false
+
   if (!volunteer.preferredSlots.includes(slot.label)) {
     // Rare cover outside a preferred slot, so the data doesn't look generated.
     // Kept low: at 20+ volunteers even a small rate inflates every headcount.
@@ -179,6 +196,9 @@ export async function seed(now: Date = new Date()): Promise<SeedResult> {
   const joinedAt = new Date(now)
   joinedAt.setUTCFullYear(joinedAt.getUTCFullYear() - 1)
 
+  const recently = new Date(now)
+  recently.setUTCDate(recently.getUTCDate() - 9)
+
   await client.batch(
     VOLUNTEERS.map((volunteer) => ({
       sql: `INSERT INTO volunteers (id, name, slack_handle, joined_at, preferred_slots)
@@ -187,7 +207,7 @@ export async function seed(now: Date = new Date()): Promise<SeedResult> {
         volunteer.id,
         volunteer.name,
         volunteer.slackHandle,
-        joinedAt.toISOString(),
+        (NEWCOMERS.includes(volunteer.id) ? recently : joinedAt).toISOString(),
         JSON.stringify(volunteer.preferredSlots),
       ],
     })),
