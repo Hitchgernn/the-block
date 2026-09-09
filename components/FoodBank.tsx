@@ -96,6 +96,71 @@ export default function FoodBank({ position, selected, onSelect }: FoodBankProps
         </mesh>
       ))}
 
+      {/*
+        The service yard. A food bank's back is where the deliveries arrive, so
+        the rear reads as a loading dock rather than as a blank wall — which is
+        what it was before the camera could be rotated all the way around.
+
+        Nothing here glows. --lamp means one thing only, and a delivery bay is
+        not somebody showing up for a shift (design.md section 3).
+      */}
+      <group position={[0, 0, -DEPTH / 2]}>
+        {/* Dock platform, at the height a van bed would sit. */}
+        <mesh position={[0, 0.26, -0.85]}>
+          <boxGeometry args={[4.6, 0.52, 1.7]} />
+          <meshStandardMaterial color={SLAB} roughness={1} flatShading />
+        </mesh>
+
+        {/* Roller shutter, recessed into the wall. */}
+        <mesh position={[-0.5, 0.18 + 0.78, -0.03]}>
+          <boxGeometry args={[2.7, 1.45, 0.08]} />
+          <meshStandardMaterial color="#3a4759" roughness={1} flatShading />
+        </mesh>
+        {[0.28, 0.6, 0.92, 1.24].map((y) => (
+          <mesh key={y} position={[-0.5, 0.18 + y, -0.09]}>
+            <boxGeometry args={[2.62, 0.05, 0.03]} />
+            <meshStandardMaterial color={KERB} roughness={1} />
+          </mesh>
+        ))}
+
+        {/* Staff door beside the shutter. */}
+        <mesh position={[1.6, 0.18 + 0.55, -0.03]}>
+          <boxGeometry args={[0.72, 1.1, 0.08]} />
+          <meshStandardMaterial color="#33405a" roughness={1} flatShading />
+        </mesh>
+
+        {/* Stacked crates waiting to go in. */}
+        {[
+          { pos: [-1.5, 0.72, -0.95] as const, size: [0.62, 0.4, 0.5] as const },
+          { pos: [-1.44, 1.1, -0.9] as const, size: [0.54, 0.36, 0.44] as const },
+          { pos: [-0.72, 0.68, -1.15] as const, size: [0.5, 0.32, 0.44] as const },
+          { pos: [1.35, 0.7, -1.05] as const, size: [0.58, 0.36, 0.48] as const },
+        ].map((crate, index) => (
+          <mesh key={index} position={crate.pos} rotation-y={index * 0.18 - 0.2}>
+            <boxGeometry args={crate.size} />
+            <meshStandardMaterial color={SLAB} roughness={1} flatShading />
+          </mesh>
+        ))}
+
+        {/* Bins at the edge of the yard. */}
+        {[-2.75, -2.1].map((x) => (
+          <mesh key={x} position={[x, 0.34, -1.5]}>
+            <cylinderGeometry args={[0.26, 0.23, 0.68, 8]} />
+            <meshStandardMaterial color={KERB} roughness={1} flatShading />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Roof plant — gives the flat roof a silhouette from every angle. */}
+      <mesh position={[-1.5, 0.18 + HEIGHT + 0.42, -0.5]}>
+        <boxGeometry args={[1.5, 0.42, 1.05]} />
+        <meshStandardMaterial color={KERB} roughness={1} flatShading />
+      </mesh>
+      <mesh position={[1.5, 0.18 + HEIGHT + 0.36, -0.35]}>
+        <cylinderGeometry args={[0.3, 0.3, 0.3, 10]} />
+        <meshStandardMaterial color={KERB} roughness={1} flatShading />
+      </mesh>
+
       <pointLight
         ref={lightRef}
         position={[0, 0.18 + 1.5, DEPTH / 2 + 1.1]}
