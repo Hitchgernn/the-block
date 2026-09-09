@@ -108,6 +108,33 @@ From `design.md`, and they are checked:
 
 Seeded inputs, real logic. **Disclose this in the README and the video** (`prd.md` §10).
 
+## Scene cost, measured
+
+Measured at 25 volunteers, 1400x900:
+
+| | |
+|---|---|
+| Draw calls per frame | **412** |
+| ...of which the 25 plots | **~360** |
+| ...of which all borrowed scenery | **~52** |
+
+Roads, pavements, grass, some forty trees, lamps, benches, cars, twenty-six
+skyline towers, the park and the food bank cost about fifty draw calls between
+them, because every repeated asset goes through drei `<Instances>`. **Keep it
+that way** — the same content drawn one mesh per placement would be several
+hundred.
+
+The plots are the expensive part and cannot be instanced: each is unique
+geometry derived from one volunteer's history, and window emissive colour varies
+per plot with quietness. Roughly 150 of their 360 calls are windows. If draw
+calls ever need reducing, that is the only place worth looking — not the
+scenery.
+
+**Wall-clock frame time measured in headless Chromium is meaningless.** It runs
+SwiftShader, a software rasteriser; the ~1000 ms/frame it reports says nothing
+about a real GPU. Draw-call count is the number to watch, since it is
+hardware-independent.
+
 ## Verifying the UI
 
 The Playwright MCP is broken on this machine (it wants Chrome at `/opt/google/chrome/chrome`). Use the cached Playwright Chromium directly over CDP instead — Node 22 has a native `WebSocket`:
