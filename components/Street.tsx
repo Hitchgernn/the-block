@@ -4,7 +4,7 @@ import { Instance, Instances } from '@react-three/drei'
 import type { AssetName } from '@/components/scene-assets'
 import { TILE, useSceneAsset } from '@/components/scene-assets'
 import type { BlockLayout } from '@/components/scene-utils'
-import { LOT, streetGrid } from '@/components/scene-utils'
+import { LOT, jitterFor, streetGrid } from '@/components/scene-utils'
 
 interface StreetProps {
   layout: BlockLayout
@@ -105,16 +105,25 @@ export default function Street({ layout }: StreetProps) {
   const farZ = Math.floor((grid.avenueZ - TILE * 2) / TILE) * TILE
   const rings = 1
 
+  // Some tiles come up as leaf litter instead of plain grass, so the ring is
+  // not a single flat colour. Chosen from the position hash rather than at
+  // random — the ground must not reshuffle between renders.
+  const leaf: { key: string; pos: [number, number, number] }[] = []
+  const place = (key: string, pos: [number, number, number]) => {
+    const seed = jitterFor(`verge-${pos[0]}-${pos[2]}`)
+    ;(seed.widthScale > 1.04 ? leaf : verge).push({ key, pos })
+  }
+
   for (let x = -halfX; x <= halfX; x += TILE) {
     for (let ring = 0; ring < rings; ring += 1) {
-      verge.push({ key: `gn${x}-${ring}`, pos: [x, 0, nearZ + ring * TILE] })
-      verge.push({ key: `gf${x}-${ring}`, pos: [x, 0, farZ - ring * TILE] })
+      place(`gn${x}-${ring}`, [x, 0, nearZ + ring * TILE])
+      place(`gf${x}-${ring}`, [x, 0, farZ - ring * TILE])
     }
   }
   for (let z = farZ; z <= nearZ; z += TILE) {
     for (let ring = 0; ring < rings; ring += 1) {
-      verge.push({ key: `gl${z}-${ring}`, pos: [-halfX - ring * TILE, 0, z] })
-      verge.push({ key: `gr${z}-${ring}`, pos: [halfX + ring * TILE, 0, z] })
+      place(`gl${z}-${ring}`, [-halfX - ring * TILE, 0, z])
+      place(`gr${z}-${ring}`, [halfX + ring * TILE, 0, z])
     }
   }
 
@@ -124,6 +133,7 @@ export default function Street({ layout }: StreetProps) {
       <Tiles asset="roadIntersection" placements={junctions} />
       <Tiles asset="sidewalk" placements={pavement} />
       <Tiles asset="grassVerge" placements={verge} />
+      <Tiles asset="leafLawn" placements={leaf} />
     </group>
   )
 }

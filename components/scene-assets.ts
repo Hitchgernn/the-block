@@ -78,7 +78,9 @@ const TINT: Record<AssetName, string> = {
   planter: '#4f6b48',
   streetLamp: KERB,
   busShelter: KERB,
-  car: '#48566b',
+  // Lifted well above the other street furniture: a parked car sat at the
+  // same value as the kerb and simply disappeared into the road.
+  car: '#7d8ba6',
   shopAwning: PALETTE.stone,
   apartment: '#2f3d52',
   skyscraper: '#2b3748',
