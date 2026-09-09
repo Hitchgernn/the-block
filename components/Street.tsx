@@ -49,7 +49,7 @@ function Tiles({
  */
 export default function Street({ layout }: StreetProps) {
   const grid = streetGrid(layout)
-  const { road, width, depth } = layout
+  const { road } = layout
 
   const roadTiles: { key: string; pos: [number, number, number]; rotY?: number }[] = []
   const junctions: { key: string; pos: [number, number, number] }[] = []
@@ -100,9 +100,7 @@ export default function Street({ layout }: StreetProps) {
   // a rectangle rather than as four independent loops keeps the corners filled
   // instead of leaving the diagonal gaps a naive pass produces.
   const verge: { key: string; pos: [number, number, number] }[] = []
-  const halfX = Math.ceil((width / 2 + TILE) / TILE) * TILE
-  const nearZ = Math.ceil((depth / 2 + TILE) / TILE) * TILE
-  const farZ = Math.floor((grid.avenueZ - TILE * 2) / TILE) * TILE
+  const { halfX, nearZ, farZ } = layout.ground
   const rings = 1
 
   // Some tiles come up as leaf litter instead of plain grass, so the ring is

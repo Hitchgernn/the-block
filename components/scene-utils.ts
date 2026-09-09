@@ -137,6 +137,12 @@ export interface BlockLayout {
   foodBank: { x: number; z: number }
   /** Grid plus the food bank, so the camera can frame everything. */
   sceneDepth: number
+  /**
+   * Extent of the ground the town stands on — the grass ring and the plinth
+   * beneath it both read these, so the slab cannot end short of the grass and
+   * leave it overhanging into open air.
+   */
+  ground: { halfX: number; nearZ: number; farZ: number }
 }
 
 /**
@@ -185,6 +191,14 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
     },
     foodBank: { x: 0, z: -depth / 2 - FORECOURT_DEPTH },
     sceneDepth: depth + FORECOURT_DEPTH * 2,
+    ground: {
+      halfX: Math.ceil((width / 2 + LOT) / LOT) * LOT,
+      nearZ: Math.ceil((depth / 2 + LOT) / LOT) * LOT,
+      farZ:
+        Math.floor(
+          (-depth / 2 - FORECOURT_DEPTH + LOT * 1.6 - LOT * 2) / LOT,
+        ) * LOT,
+    },
   }
 }
 

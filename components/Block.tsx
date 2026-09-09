@@ -84,7 +84,7 @@ function Framing({
     // edge at this margin with the food bank in frame.
     // Framed a touch wide so the plinth's edge stays in shot — the thickness
     // is the whole point of having one.
-    const margin = compact ? 1.12 : 1.42
+    const margin = compact ? 1.3 : 1.42
     const distance = Math.max(
       (spanAcross * margin) / 2 / Math.tan(hFov / 2),
       (spanUp * margin) / 2 / Math.tan(vFov / 2),
@@ -118,7 +118,7 @@ export default function Block({
   onSelectFoodBank,
 }: BlockProps) {
   const layout = useMemo(() => layoutPlots(plots), [plots])
-  const { placements, width, depth, foodBank, sceneDepth } = layout
+  const { placements, foodBank, sceneDepth } = layout
 
   // The forecourt shows the next shift, which is the one the agent is about to
   // act on. deriveShifts already returns them soonest first.
@@ -126,17 +126,22 @@ export default function Block({
 
   // Content runs from behind the food bank to the front row of lots. Aim at the
   // middle of that, not at the middle of the housing grid.
-  const centreZ = (foodBank.z - 2.2 + depth / 2) / 2
+  const centreZ = (foodBank.z - 2.2 + layout.depth / 2) / 2
 
   // Zoom bounds are tied to the block's own size rather than fixed numbers, so
   // they stay sensible whatever the volunteer count does to the layout.
   // Sized to hold the block, its streets and the grass rim around them.
+  // Sized from the same ground extent the grass ring is laid to, plus one tile
+  // of margin, so the slab always reaches past the last turf rather than
+  // stopping short and letting the ground plane show through underneath.
+  const ground = layout.ground
   const plinth = {
-    width: width + TILE * 4,
-    depth: depth + TILE * 4 + Math.abs(foodBank.z + depth / 2) * 1.1,
+    width: (ground.halfX + TILE * 2) * 2,
+    depth: ground.nearZ - ground.farZ + TILE * 4,
+    centre: (ground.nearZ + ground.farZ) / 2,
   }
 
-  const span = (width + depth) / Math.SQRT2
+  const span = (layout.width + layout.depth) / Math.SQRT2
   const zoom = { min: span * 0.45, max: span * 2.2 }
 
   return (
@@ -151,7 +156,7 @@ export default function Block({
       <fog attach="fog" args={[PALETTE.dusk, 40, 90]} />
 
       <Framing
-        width={width}
+        width={layout.width}
         depth={sceneDepth}
         centreZ={centreZ}
         compact={compact}
@@ -173,7 +178,9 @@ export default function Block({
         color="#5b74a0"
       />
 
-      <mesh rotation-x={-Math.PI / 2}>
+      {/* Dropped below the plinth's top face. Both sat at y=0 and fought for
+          the same depth, which striped the slab with banding. */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, -0.9, 0]}>
         {/* Large enough that its far edge always falls beyond fog.far — at a
             wide mobile fov a smaller plane showed its horizon as a hard
             silhouette against the sky. */}
@@ -191,7 +198,7 @@ export default function Block({
         raised ground with the city below and behind — the composition in
         reference-1 and reference-3.
       */}
-      <group position={[0, 0, centreZ]}>
+      <group position={[0, 0, plinth.centre]}>
         <mesh position={[0, -PLINTH_HEIGHT / 2, 0]}>
           <boxGeometry
             args={[plinth.width, PLINTH_HEIGHT, plinth.depth]}
