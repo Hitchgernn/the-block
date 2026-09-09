@@ -102,8 +102,14 @@ export function jitterFor(volunteerId: string): Jitter {
 
 // ---------------------------------------------------------------- layout
 
-export const LOT = 3.0
-export const ROAD_GAP = 1.6
+/**
+ * The asset pack's ground tiles are all exactly 4.00 x 4.00, so the lot grid
+ * matches them one to one. At the old 3.0 a street lamp from the pack (4.10
+ * tall) stood higher than a finished house, and a car (3.06 long) was longer
+ * than a house was tall.
+ */
+export const LOT = 4.0
+export const ROAD_GAP = 4.0
 const COLS = 6
 
 export interface Placement {
@@ -113,7 +119,7 @@ export interface Placement {
 }
 
 /** How far in front of the block the food bank sits, across the near street. */
-export const FORECOURT_DEPTH = 5.4
+export const FORECOURT_DEPTH = 7.5
 
 export interface BlockLayout {
   placements: Placement[]
@@ -260,4 +266,44 @@ export function describeShift(shift: Shift): string {
   )}. ${numberWord(shift.committed)} of ${numberWord(
     shift.minimum,
   )} committed so far.`
+}
+
+
+// ------------------------------------------------------------------ tiles
+
+/**
+ * Where the streets run, in tile coordinates.
+ *
+ * Both the carriageway and the lots come out of layoutPlots, so anything that
+ * needs to line up with a street asks here rather than recomputing the grid —
+ * that duplication is exactly what put the cross street a whole lot away from
+ * its gap the first time round.
+ */
+export interface StreetGrid {
+  /** Tile centres along the vertical street. */
+  vertical: number[]
+  /** Tile centres along the horizontal street. */
+  horizontal: number[]
+  /** Tile centres along the avenue in front of the block. */
+  avenue: number[]
+  avenueZ: number
+}
+
+export function streetGrid(layout: BlockLayout): StreetGrid {
+  const halfW = layout.width / 2 + LOT * 1.5
+  const halfD = layout.depth / 2 + LOT * 1.5
+  const avenueZ = layout.foodBank.z + LOT * 1.6
+
+  const line = (from: number, to: number) => {
+    const out: number[] = []
+    for (let v = Math.ceil(from / LOT) * LOT; v <= to; v += LOT) out.push(v)
+    return out
+  }
+
+  return {
+    vertical: line(-halfD, halfD),
+    horizontal: line(-halfW, halfW),
+    avenue: line(-halfW, halfW),
+    avenueZ,
+  }
 }

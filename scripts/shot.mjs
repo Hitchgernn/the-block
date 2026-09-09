@@ -19,6 +19,16 @@ if (!url || !out) {
 const mobile = rest.includes('--mobile')
 const clicks = rest.flatMap((arg, i) => (arg === '--click' ? [rest[i + 1]] : []))
 
+// Warm the route first. In dev the first request after an edit triggers a
+// recompile that can take longer than the wait below, and the screenshot then
+// photographs a blank canvas mid-build.
+try {
+  const started = Date.now()
+  await fetch(url).catch(() => {})
+  await fetch(new URL('/api/state', url)).catch(() => {})
+  console.error(`warmed in ${Date.now() - started}ms`)
+} catch {}
+
 const chrome = execSync(
   'ls -d ~/.cache/ms-playwright/chromium-*/chrome-linux/chrome | tail -1',
   { shell: '/bin/bash' },
@@ -68,8 +78,10 @@ if (mobile) {
   })
 }
 await send('Page.navigate', { url })
-// The scene needs a beat: fonts, the client fetch, then the first r3f frames.
-await wait(8000)
+// The scene needs a beat: fonts, the client fetch, the GLB assets, then the
+// first r3f frames. Too short a wait photographs a half-loaded scene and makes
+// the screenshot lie about what shipped.
+await wait(15000)
 
 for (const label of clicks) {
   await send('Runtime.evaluate', {

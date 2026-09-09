@@ -136,10 +136,13 @@ export default function Plot({
   })
 
   const lit = plot.completedShifts > 0
-  const width = 1.55 * jitter.widthScale
-  const depth = 1.55 * jitter.depthScale
+  // Sized for the 4-unit lot the asset pack's tiles establish. At the old
+  // scale a street lamp from the pack (4.10 tall) stood higher than a finished
+  // house and a car (3.06 long) was longer than a house was tall.
+  const width = 2.3 * jitter.widthScale
+  const depth = 2.3 * jitter.depthScale
   const baseHeight =
-    plot.stage >= 4 ? 1.95 : plot.stage === 3 ? 1.35 : plot.stage === 2 ? 1.0 : 0
+    plot.stage >= 4 ? 3.3 : plot.stage === 3 ? 2.4 : plot.stage === 2 ? 1.7 : 0
   const height = baseHeight * jitter.heightScale
   const roofRadius = (Math.max(width, depth) / Math.SQRT2) * 1.1
   const roofHeight = 0.62
@@ -149,7 +152,7 @@ export default function Plot({
     <group position={position}>
       {selected ? (
         <mesh position={[0, 0.03, 0]} rotation-y={jitter.padRotation}>
-          <boxGeometry args={[2.86, 0.05, 2.86]} />
+          <boxGeometry args={[3.8, 0.05, 3.8]} />
           <meshStandardMaterial color={PALETTE.stone} roughness={1} />
         </mesh>
       ) : null}
@@ -163,7 +166,7 @@ export default function Plot({
           onSelect(plot.volunteerId)
         }}
       >
-        <boxGeometry args={[2.5, 0.12, 2.5]} />
+        <boxGeometry args={[3.5, 0.12, 3.5]} />
         <meshStandardMaterial
           color={plot.stage === 0 ? PALETTE.stoneDim : '#3b4c64'}
           roughness={1}
@@ -260,7 +263,7 @@ export default function Plot({
 
       {/* A porch lamp on every plot where someone has actually shown up. */}
       {lit ? (
-        <group position={[0.98, slabTop, 0.98]}>
+        <group position={[1.45, slabTop, 1.45]}>
           <mesh position={[0, 0.42, 0]}>
             <cylinderGeometry args={[0.035, 0.05, 0.84, 6]} />
             <meshStandardMaterial color={PALETTE.stoneDim} roughness={1} />

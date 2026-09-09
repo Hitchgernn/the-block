@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { Suspense, useEffect, useMemo } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Plot as PlotData, Shift } from '@/lib/types'
 import Plot from '@/components/Plot'
 import Street from '@/components/Street'
+import { preloadSceneAssets } from '@/components/scene-assets'
 import FoodBank from '@/components/FoodBank'
 import Forecourt from '@/components/Forecourt'
 import { PALETTE, layoutPlots } from '@/components/scene-utils'
@@ -24,6 +25,8 @@ interface BlockProps {
   foodBankSelected: boolean
   onSelectFoodBank: () => void
 }
+
+preloadSceneAssets()
 
 /** Fixed isometric-ish direction. Only the distance ever changes. */
 const VIEW_DIR = new THREE.Vector3(0.642, 0.418, 0.642).normalize()
@@ -73,7 +76,7 @@ function Framing({
     // capture with 23 plots.
     // Verified against the edge-sampling check: nothing touches a viewport
     // edge at this margin with the food bank in frame.
-    const margin = compact ? 1.04 : 1.14
+    const margin = compact ? 1.06 : 1.2
     const distance = Math.max(
       (spanAcross * margin) / 2 / Math.tan(hFov / 2),
       (spanUp * margin) / 2 / Math.tan(vFov / 2),
@@ -104,10 +107,8 @@ export default function Block({
   foodBankSelected,
   onSelectFoodBank,
 }: BlockProps) {
-  const { placements, width, depth, road, foodBank, sceneDepth } = useMemo(
-    () => layoutPlots(plots),
-    [plots],
-  )
+  const layout = useMemo(() => layoutPlots(plots), [plots])
+  const { placements, width, depth, foodBank, sceneDepth } = layout
 
   // The forecourt shows the next shift, which is the one the agent is about to
   // act on. deriveShifts already returns them soonest first.
@@ -157,7 +158,18 @@ export default function Block({
         <meshStandardMaterial color={PALETTE.duskDeep} roughness={1} />
       </mesh>
 
-      <Street width={width} depth={depth} road={road} />
+      {/*
+        Everything that loads a GLB goes inside Suspense.
+
+        useGLTF suspends, and a suspending component with no boundary unmounts
+        the whole subtree — including <color attach="background"> — which
+        renders the canvas plain white with no error to show for it. Lights,
+        fog and framing stay outside so the scene has its dusk ground from the
+        first frame rather than flashing white while assets arrive.
+      */}
+      <Suspense fallback={null}>
+        <Street layout={layout} />
+      </Suspense>
 
       <FoodBank
         position={[foodBank.x, 0, foodBank.z]}
