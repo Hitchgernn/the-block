@@ -205,8 +205,11 @@ export default function Block({
           />
           <meshStandardMaterial color={PLINTH_SIDE} roughness={1} flatShading />
         </mesh>
-        {/* A narrow lip catches the key light and reads as a kerb edge. */}
-        <mesh position={[0, -0.06, 0]}>
+        {/* A narrow lip catches the key light and reads as a kerb edge. It sits
+            wholly below the plinth's top face: as a full-footprint box with its
+            own top also at y=0 it fought the slab for the same depth and striped
+            the whole surface with banding. */}
+        <mesh position={[0, -0.19, 0]}>
           <boxGeometry
             args={[plinth.width + 0.5, 0.12, plinth.depth + 0.5]}
           />
