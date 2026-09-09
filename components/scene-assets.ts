@@ -52,6 +52,25 @@ export type AssetName = keyof typeof ASSETS
 /** Ground tiles in the pack are all exactly 4.00 x 4.00. */
 export const TILE = 4
 
+/**
+ * How far each ground tile's walking surface sits above y=0.
+ *
+ * The tiles are not flat and they are not all the same depth — the pack builds
+ * its kerbs by making the pavement stand taller than the carriageway. Since
+ * every asset is ground-aligned, a tile placed at y=0 puts its *surface* this
+ * far up, and anything else placed at y=0 stands below it.
+ *
+ * Tall things get away with it. Short things do not: the forecourt's gap
+ * marker is 0.09 high and vanished completely beneath 0.53 of plaza paving.
+ * Measured from the GLB bounding boxes; single source so nothing re-guesses.
+ */
+export const SURFACE_TOP = {
+  road: 0.28,
+  sidewalk: 0.48,
+  plaza: 0.53,
+  grass: 0.84,
+} as const
+
 const url = (name: AssetName) => `/models/${ASSETS[name]}.glb`
 
 /**
