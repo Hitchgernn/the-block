@@ -152,8 +152,48 @@ export default function Props({ layout }: PropsProps) {
     cars.push({ key: `c${index}`, pos, rotY: index === 2 ? Math.PI / 2 : 0 })
   })
 
+  // A pocket park on the way to the food bank.
+  //
+  // The town had one landmark and every corner of the block looked like every
+  // other corner. This gives it a second place and something to orient by, and
+  // it sits on the route people walk between the houses and the shift — which
+  // is also somewhere to wait.
+  //
+  // It is scenery: no state, no growth, nothing derived. The plots remain the
+  // only things in the scene that mean anything.
+  // Positioned from the block's own extent, not from the food bank. Anchoring
+  // it relative to the shop put it on top of the lot grid the moment the
+  // volunteer count grew the block by a row.
+  const parkX = width / 2 + TILE * 1.7
+  const parkZ = -depth / 6
+  const paving: Placement[] = []
+  for (const dx of [-0.5, 0.5]) {
+    for (const dz of [-0.5, 0.5]) {
+      paving.push({
+        key: `pk${dx}${dz}`,
+        pos: [parkX + dx * TILE, 0, parkZ + dz * TILE],
+      })
+    }
+  }
+  for (const [i, [dx, dz]] of ([[-1.1, -1], [1.15, -0.9], [-0.95, 1.05], [1.05, 1.1]] as const).entries()) {
+    const seed = jitterFor(`park-${i}`)
+    const target = i % 2 === 0 ? trees.apple : trees.conifer
+    target.push({
+      key: `pt${i}`,
+      pos: [parkX + dx * TILE, 0, parkZ + dz * TILE],
+      rotY: seed.rotation * 6,
+      scale: 0.85 + seed.heightScale * 0.2,
+    })
+  }
+  benches.push({ key: 'pb1', pos: [parkX - TILE * 0.4, 0, parkZ], rotY: Math.PI / 2 })
+  benches.push({ key: 'pb2', pos: [parkX + TILE * 0.4, 0, parkZ], rotY: -Math.PI / 2 })
+  planters.push({ key: 'pp1', pos: [parkX, 0, parkZ - TILE * 0.75] })
+  planters.push({ key: 'pp2', pos: [parkX, 0, parkZ + TILE * 0.75] })
+  lamps.push({ key: 'pl1', pos: [parkX + TILE * 0.95, 0, parkZ - TILE * 0.6] })
+
   return (
     <group>
+      <Scattered asset="plazaPaving" placements={paving} />
       <Scattered asset="streetTree" placements={trees.street} />
       <Scattered asset="appleTree" placements={trees.apple} />
       <Scattered asset="conifer" placements={trees.conifer} />
