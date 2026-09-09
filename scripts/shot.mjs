@@ -1,6 +1,13 @@
 // Screenshot the running app over CDP.
 //
-//   node scripts/shot.mjs <url> <out.png> [--mobile] [--click "Look around"] ...
+//   node scripts/shot.mjs <url> <out.png> [--mobile] [--click "Text"]
+//                          [--rotate <deg>] [--zoom <steps>]
+//
+// --rotate turns the camera by dragging. OrbitControls scales rotation by the
+// canvas HEIGHT, not its width, so the pixel distance per degree is derived
+// from the viewport rather than guessed — getting that wrong once made a
+// half-turn look like a quarter-turn and sent me hunting a bug that was not
+// there. --zoom sends wheel steps; negative zooms out.
 //
 // The Playwright MCP on this machine looks for Chrome at /opt/google/chrome and
 // fails, and Chrome's own --screenshot flag mishandles the app's `position:
@@ -18,6 +25,8 @@ if (!url || !out) {
 
 const mobile = rest.includes('--mobile')
 const clicks = rest.flatMap((arg, i) => (arg === '--click' ? [rest[i + 1]] : []))
+const rotateDeg = Number(rest[rest.indexOf('--rotate') + 1] ?? 0) || 0
+const zoomSteps = Number(rest[rest.indexOf('--zoom') + 1] ?? 0) || 0
 
 // Warm the route first. In dev the first request after an edit triggers a
 // recompile that can take longer than the wait below, and the screenshot then
@@ -89,6 +98,45 @@ for (const label of clicks) {
       .find(el => el.textContent.includes(${JSON.stringify(label)}))?.click()`,
   })
   await wait(1500)
+}
+
+const viewport = mobile ? { w: 390, h: 844 } : { w: 1400, h: 900 }
+
+if (rotateDeg !== 0) {
+  // OrbitControls: rotateLeft(2 * PI * dx / clientHeight * rotateSpeed).
+  const rotateSpeed = 0.35
+  const dx = (rotateDeg / 360) * (viewport.h / rotateSpeed)
+  const steps = 40
+  const y = Math.round(viewport.h * 0.5)
+  const startX = Math.round(viewport.w * 0.5)
+  await send('Input.dispatchMouseEvent', {
+    type: 'mousePressed', x: startX, y, button: 'left', clickCount: 1, buttons: 1,
+  })
+  for (let i = 1; i <= steps; i += 1) {
+    await send('Input.dispatchMouseEvent', {
+      type: 'mouseMoved', x: startX + (dx * i) / steps, y, button: 'left', buttons: 1,
+    })
+    await wait(12)
+  }
+  await send('Input.dispatchMouseEvent', {
+    type: 'mouseReleased', x: startX + dx, y, button: 'left', buttons: 0,
+  })
+  await wait(900)
+}
+
+if (zoomSteps !== 0) {
+  const dir = zoomSteps > 0 ? -120 : 120
+  for (let i = 0; i < Math.abs(zoomSteps); i += 1) {
+    await send('Input.dispatchMouseEvent', {
+      type: 'mouseWheel',
+      x: Math.round(viewport.w * 0.5),
+      y: Math.round(viewport.h * 0.45),
+      deltaX: 0,
+      deltaY: dir,
+    })
+    await wait(110)
+  }
+  await wait(800)
 }
 
 const shot = await send('Page.captureScreenshot', { format: 'png' })

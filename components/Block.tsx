@@ -146,12 +146,19 @@ export default function Block({
       />
 
       <hemisphereLight args={['#6d81a2', '#1a2534', 0.72]} />
-      <ambientLight intensity={0.26} color="#61728c" />
+      <ambientLight intensity={0.34} color="#61728c" />
       <directionalLight position={[16, 13, 9]} intensity={1} color="#e6d9c4" />
+      {/*
+        Fill from the side the key light does not reach. Now that the camera can
+        be walked all the way round, the far faces were falling close to black
+        and the town read as unlit from behind — which quietly undermines "every
+        light is someone who showed up". Cool and low, so it lifts the silhouette
+        without competing with a window.
+      */}
       <directionalLight
         position={[-14, 7, -8]}
-        intensity={0.22}
-        color="#57709a"
+        intensity={0.46}
+        color="#5b74a0"
       />
 
       <mesh rotation-x={-Math.PI / 2}>

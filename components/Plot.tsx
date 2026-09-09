@@ -62,8 +62,11 @@ function windowSlots(stage: number, w: number, d: number, h: number) {
     slots.push({ pos: [-w * 0.22, upper, front], rotY: 0 })
     slots.push({ pos: [w * 0.22, upper, front], rotY: 0 })
     slots.push({ pos: [right, upper, -d * 0.18], rotY: Math.PI / 2 })
+    slots.push({ pos: [right, upper, d * 0.22], rotY: Math.PI / 2 })
     slots.push({ pos: [-w * 0.2, upper, back], rotY: 0 })
+    slots.push({ pos: [w * 0.24, upper, back], rotY: 0 })
     slots.push({ pos: [left, upper, d * 0.2], rotY: Math.PI / 2 })
+    slots.push({ pos: [left, upper, -d * 0.22], rotY: Math.PI / 2 })
   }
   return slots
 }
@@ -239,10 +242,10 @@ export default function Plot({
         {plot.stage >= 4 ? (
           <pointLight
             ref={pointRef}
-            position={[0, 0.22 + height * 0.5, depth * 1.15]}
+            position={[0, 0.22 + height * 0.55, 0]}
             color={lampHue}
             intensity={1.6 * glow}
-            distance={6}
+            distance={7}
             decay={2}
           />
         ) : null}
