@@ -153,10 +153,17 @@ export default function Props({ layout }: PropsProps) {
 
   // A few cars parked along the kerb. Parked, never driving — see the note on
   // motion above.
+  // Against the kerb, inside the carriageway. The carriageway is 4 wide, so
+  // its edge is 2 from the centreline and a car half a unit wide parks at
+  // about 1.35. At TILE * 0.55 they sat at 2.2 — past the kerb, on the
+  // pavement, and sunk because they were placed at road height while standing
+  // on a surface 0.2 higher. Widening the street corridor moved the road out
+  // from under them.
+  const KERB_OFFSET = 1.35
   const parking: [number, number, number][] = [
-    [road.x + TILE * 0.55, ROAD_TOP, -depth / 2 + TILE * 0.5],
-    [road.x - TILE * 0.55, ROAD_TOP, depth / 2 - TILE * 1.2],
-    [width / 2 - TILE * 0.8, ROAD_TOP, road.z + TILE * 0.55],
+    [road.x + KERB_OFFSET, ROAD_TOP, -depth / 2 + TILE * 0.5],
+    [road.x - KERB_OFFSET, ROAD_TOP, depth / 2 - TILE * 1.2],
+    [width / 2 - TILE * 0.8, ROAD_TOP, road.z - KERB_OFFSET],
   ]
   parking.forEach((pos, index) => {
     cars.push({ key: `c${index}`, pos, rotY: index === 2 ? Math.PI / 2 : 0 })
