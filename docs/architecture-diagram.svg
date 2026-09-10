@@ -98,8 +98,8 @@
   <rect x="48" y="656" width="556" height="112" rx="8" fill="#223044" stroke="#4a5a72"/>
   <text x="72" y="682" font-size="14" fill="#dcd3c4">The Block — volunteer surface</text>
   <text x="72" y="704" font-size="12" fill="#aeb6c0">react-three-fiber, primitives only. Growth stages 0–4</text>
-  <text x="72" y="722" font-size="12" fill="#aeb6c0">derived from completed shifts. One window lights up</text>
-  <text x="72" y="740" font-size="12" fill="#aeb6c0">per person who showed up; quiet plots dim, never dark.</text>
+  <text x="72" y="722" font-size="12" fill="#aeb6c0">derived from completed shifts. Nothing lights until</text>
+  <text x="72" y="740" font-size="12" fill="#aeb6c0">somebody shows up; quiet plots dim, but never go out.</text>
 
   <rect x="636" y="656" width="556" height="112" rx="8" fill="#223044" stroke="#4a5a72"/>
   <text x="660" y="682" font-size="14" fill="#dcd3c4">Digest — coordinator surface</text>

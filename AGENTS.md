@@ -96,7 +96,8 @@ Turso (libSQL) over HTTP in production; a local `file:` URL in development, same
 
 From `design.md`, and they are checked:
 
-- **`--lamp` (#FFC94A) means exactly one thing: someone showed up.** Never a button, link, border or focus ring. Gold anywhere else breaks the metaphor and the scene stops being readable.
+- **`--lamp` (#FFC94A) means exactly one thing: someone showed up.** Never a button, link, border or focus ring. Gold anywhere else breaks the metaphor and the scene stops being readable. Highlights use `--stone`. The food bank's doorway is the one sanctioned exception, because that doorway is where people show up; its windows are dark glass.
+- **A lit window is not one person.** Windows come with the growth stage — three at stage 2, five at stage 3, thirteen at stage 4 — and the stage comes from completed shifts, so light appears *because* people showed up without counting them one for one. `docs/architecture-diagram.svg` used to claim "one window lights up per person who showed up", which was never true. Say "nothing lights until somebody shows up" instead, and regenerate the PNG the README embeds with `rsvg-convert -w 1240 -h 800 docs/architecture-diagram.svg -o docs/architecture-diagram.png`.
 - Empty lots are `--stone-dim` — neutral, never darker or redder. **Inaction is never a visual penalty.** Growth pauses; nothing burns down, nothing regresses a stage.
 - Copy: plain verbs, sentence case, warmth about people, no drama about gaps. "Saturday 9am is short two people." never "⚠️ CRITICAL COVERAGE ALERT". The interface rarely says a point total out loud — the building growing *is* the reward.
 - No all-caps labels, no accent-coloured word in a headline, no eyebrow labels. `design.md` calls these the tells that make work read as generated.
