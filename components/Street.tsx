@@ -4,7 +4,7 @@ import { Instance, Instances } from '@react-three/drei'
 import type { AssetName } from '@/components/scene-assets'
 import { TILE, useSceneAsset } from '@/components/scene-assets'
 import type { BlockLayout } from '@/components/scene-utils'
-import { LOT, cellKey, jitterFor } from '@/components/scene-utils'
+import { LOT, classifyCell, jitterFor } from '@/components/scene-utils'
 
 interface StreetProps {
   layout: BlockLayout
@@ -58,7 +58,7 @@ const near = (a: number, b: number) => Math.abs(a - b) < 0.01
  * exactly `ROAD_GAP`, so pavement meets the lot edge and stops.
  */
 export default function Street({ layout }: StreetProps) {
-  const { road, avenueZ, ground, lotCells } = layout
+  const { road, ground } = layout
 
   const carriageway: Placement[] = []
   const junctions: Placement[] = []
@@ -83,47 +83,31 @@ export default function Street({ layout }: StreetProps) {
       const key = `${x},${z}`
       const pos: [number, number, number] = [x, 0, z]
 
-      // A lot draws its own ground. The back row sits exactly one tile from
-      // the avenue, so the pavement rule below claimed six of them and laid a
-      // sidewalk coplanar with the pad already there.
-      if (lotCells.has(cellKey(x, z))) continue
-
-      const onVertical = near(x, road.x)
-      const onCross = near(z, road.z)
-      const onAvenue = near(z, avenueZ)
-      const onHorizontal = onCross || onAvenue
-
-      if (onVertical && onHorizontal) {
-        junctions.push({ key, pos })
-        continue
-      }
-      if (onVertical) {
-        carriageway.push({ key, pos })
-        continue
-      }
-      if (onHorizontal) {
-        carriageway.push({ key, pos, rotY: Math.PI / 2 })
-        continue
-      }
-
-      // One tile either side of every carriageway is pavement. That is the
-      // whole of the remaining corridor, so it cannot reach a lot.
-      const besideVertical = near(Math.abs(x - road.x), TILE)
-      const besideHorizontal =
-        near(Math.abs(z - road.z), TILE) || near(Math.abs(z - avenueZ), TILE)
-      if (besideVertical || besideHorizontal) {
-        pavement.push({ key, pos })
-        continue
-      }
-
-      // Grass rims the block. Inside it are the lots, which draw themselves.
-      const outside =
-        Math.abs(x) > ground.halfX - 0.01 ||
-        z > ground.nearZ - 0.01 ||
-        z < ground.farZ + 0.01
-      if (outside) {
-        const seed = jitterFor(`verge-${x}-${z}`)
-        ;(seed.widthScale > 1.04 ? leaf : verge).push({ key, pos })
+      // classifyCell is the only thing that decides what a cell is. Props.tsx
+      // reads the same function to work out what a prop is standing on.
+      switch (classifyCell(layout, x, z)) {
+        case 'junction':
+          junctions.push({ key, pos })
+          break
+        case 'road':
+          // Rotated when the street runs across rather than up the screen.
+          carriageway.push({
+            key,
+            pos,
+            rotY: near(x, road.x) ? 0 : Math.PI / 2,
+          })
+          break
+        case 'pavement':
+          pavement.push({ key, pos })
+          break
+        case 'grass': {
+          const seed = jitterFor(`verge-${x}-${z}`)
+          ;(seed.widthScale > 1.04 ? leaf : verge).push({ key, pos })
+          break
+        }
+        // 'lot' draws its own ground; 'bare' is the plinth showing through.
+        default:
+          break
       }
     }
   }

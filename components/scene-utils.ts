@@ -246,6 +246,57 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
   }
 }
 
+/**
+ * What the ground is at a given cell.
+ *
+ * One owner for the question. Street.tsx used to classify cells for tiling
+ * while Props.tsx separately assumed every prop stood on pavement, so the
+ * street trees at the block's outer edge stood on grass at pavement height —
+ * sunk 0.36 — and the lamp where the vertical street crosses the avenue
+ * floated 0.2 above the carriageway.
+ */
+export type Surface = 'road' | 'junction' | 'pavement' | 'grass' | 'lot' | 'bare'
+
+/** Snap a world position to the cell centre Street.tsx would tile there. */
+export function cellAt(layout: BlockLayout, x: number, z: number): [number, number] {
+  return [
+    layout.road.x + Math.round((x - layout.road.x) / LOT) * LOT,
+    layout.road.z + Math.round((z - layout.road.z) / LOT) * LOT,
+  ]
+}
+
+export function classifyCell(layout: BlockLayout, x: number, z: number): Surface {
+  const { road, avenueZ, ground, lotCells } = layout
+  const near = (a: number, b: number) => Math.abs(a - b) < 0.01
+
+  if (lotCells.has(cellKey(x, z))) return 'lot'
+
+  const onVertical = near(x, road.x)
+  const onHorizontal = near(z, road.z) || near(z, avenueZ)
+  if (onVertical && onHorizontal) return 'junction'
+  if (onVertical || onHorizontal) return 'road'
+
+  if (
+    near(Math.abs(x - road.x), LOT) ||
+    near(Math.abs(z - road.z), LOT) ||
+    near(Math.abs(z - avenueZ), LOT)
+  ) {
+    return 'pavement'
+  }
+
+  const outside =
+    Math.abs(x) > ground.halfX - 0.01 ||
+    z > ground.nearZ - 0.01 ||
+    z < ground.farZ + 0.01
+  return outside ? 'grass' : 'bare'
+}
+
+/** The surface a prop at this position is actually standing on. */
+export function surfaceAt(layout: BlockLayout, x: number, z: number): Surface {
+  const [cx, cz] = cellAt(layout, x, z)
+  return classifyCell(layout, cx, cz)
+}
+
 // ------------------------------------------------------------------ copy
 
 const WORDS = [
