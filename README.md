@@ -130,8 +130,9 @@ public domain** low-poly pack. No attribution is required; it is noted here
 because knowing what you did not make is part of an honest repository.
 
 Everything that carries meaning is generated from the event log rather than
-modelled: each volunteer's plot and its growth stage, the figures waiting
-outside the food bank, and every lit window.
+modelled: each volunteer's plot, its growth stage, and every lit window. The
+food bank itself is built from primitives rather than borrowed, because the
+pack's nearest building read as a corner shop.
 
 ## Licence
 

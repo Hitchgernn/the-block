@@ -150,6 +150,25 @@ ls -d ~/.cache/ms-playwright/chromium-*/chrome-linux/chrome | tail -1
 
 Chrome's `--screenshot` flag mishandles this page's `position: fixed` shell and renders the 3D scene as blank — **use `Page.captureScreenshot` over CDP**, or you will chase a bug that isn't there.
 
+```bash
+node scripts/shot.mjs http://localhost:3000/ out.png --click "Look around"
+node scripts/check-frame.mjs out.png    # must print PASS
+node scripts/audit-scene.mjs            # must print CLEAN
+```
+
+`audit-scene.mjs` walks the **running three.js scene** through the
+`window.__blockScene` handle and reports gaps in the ground, anything standing
+off the surface beneath it, and anything inside anything else. Read the live
+scene rather than re-deriving the layout: nearly every defect this scene has
+had came from a second copy of the same arithmetic drifting from the first —
+props assuming pavement height everywhere, a forecourt laid across the road,
+and reserved cells snapped to the world origin while the tiles were anchored to
+`road.z`.
+
+`check-frame.mjs` is a coarse net and knows it: it passed a full-screen
+"Maximum call stack size exceeded" overlay once, which is why it now fails any
+frame that is not a dark dusk scene.
+
 ## Working agreements
 
 - Commit convention is in `.claude/skills/commit-convention.md`: `feat(frontend): <message>`, **subject line only, no body**, plus the `Co-Authored-By` trailer. Scopes: `agent`, `db`, `frontend`, `integrations`, `docs`, `submission`.

@@ -155,8 +155,16 @@ Windows now sit on all four faces, so the block can be walked around.
 Elevation stays clamped and panning stays off: you cannot get under the ground
 plane, look straight down, or lose the block offscreen. That is what "no free
 camera" was protecting, and it still holds. Zoom is bounded rather than absent,
-because the figures waiting outside the food bank are the one thing a viewer
-should be able to count, and at the default distance they are too small to.
+so a viewer can get close enough to read one house.
+
+The forecourt used to stand one figure per volunteer committed to the next
+shift and one flat marker per person still needed — "Saturday 9am is short
+three people" as something you counted rather than read. It was removed at the
+owner's request: the figures read as odd rather than as a queue. **The reading
+is now only in words**, in the food bank's panel and in the digest, both still
+derived from the same `deriveShifts`. Nothing became untrue, but the scene lost
+a thing it could say on its own, and that is worth knowing before anyone
+wonders where coverage went.
 
 Do not add ambient drifting, floating particles, or per-element hover transitions. One moment of motion that means something beats scattered effects.
 
