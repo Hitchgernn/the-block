@@ -107,20 +107,60 @@ function settle(layout: BlockLayout, list: Placement[]) {
 }
 
 /**
- * Which way something on the pavement should face.
+ * Which way each asset's front points before any rotation.
  *
- * A bench with its back to the road is furniture nobody would sit on. The
- * asset's front is +z, so a rotation of theta points it at (sin, 0, cos).
- * The nearer of the two street axes wins, which is the same question the
- * pavement classification already answers.
+ * Measured from the GLB bounds rather than guessed, because guessing is what
+ * put the bus shelter's back to the street:
+ *
+ *   street-lamp-01  x -0.28..1.51, z -0.27..0.44  pole at origin, arm at +x
+ *   bus-shelter-01  x -2.20..2.71, z -0.81..1.10  back wall +z, opening -z
+ *
+ * The shelter carried rotY = PI, which pointed its +z back wall at the avenue
+ * and left people waiting for a shift looking into a garden. The lamps carried
+ * no rotation at all, so every arm reached over the houses.
  */
-function facingStreet(layout: BlockLayout, x: number, z: number): number {
+const FRONT = {
+  lamp: [1, 0],
+  shelter: [0, -1],
+  bench: [0, 1],
+  planter: [0, 1],
+} as const
+
+/**
+ * Turn something so its front points the given way.
+ *
+ * A rotation of theta sends a front of (fx, fz) to (fx cos + fz sin, ...), so
+ * the rotation wanted is just the difference of the two bearings.
+ */
+function aim(
+  front: readonly [number, number],
+  towards: readonly [number, number],
+): number {
+  return Math.atan2(towards[0], towards[1]) - Math.atan2(front[0], front[1])
+}
+
+/**
+ * The same, for something whose street has to be worked out from where it
+ * stands. Only safe when the thing is nearer its own street than the crossing
+ * one — a lamp moved out to the far kerb is not, so those pass a direction.
+ */
+function aimAtStreet(
+  layout: BlockLayout,
+  x: number,
+  z: number,
+  front: readonly [number, number],
+): number {
   const dx = x - layout.road.x
   const toCross = z - layout.road.z
   const toAvenue = z - layout.avenueZ
   const dz = Math.abs(toCross) < Math.abs(toAvenue) ? toCross : toAvenue
-  if (Math.abs(dx) < Math.abs(dz)) return dx > 0 ? -Math.PI / 2 : Math.PI / 2
-  return dz > 0 ? Math.PI : 0
+
+  // A tie goes to the street running across, which is the one a shelter or a
+  // bench on a corner sits along.
+  const towards: [number, number] =
+    Math.abs(dx) < Math.abs(dz) ? [dx > 0 ? -1 : 1, 0] : [0, dz > 0 ? -1 : 1]
+
+  return aim(front, towards)
 }
 
 /** Roughly how much pavement each thing takes up, in world units. */
@@ -182,7 +222,8 @@ export default function Props({ layout }: PropsProps) {
     {
       key: 'shelter',
       pos: [layout.road.x - TILE, PAVEMENT, layout.avenueZ + TILE],
-      rotY: Math.PI,
+      // It lines the avenue, which is at -z from here.
+      rotY: aim(FRONT.shelter, [0, -1]),
     },
   ]
   const benches: Placement[] = []
@@ -231,18 +272,31 @@ export default function Props({ layout }: PropsProps) {
   // lamp stood inside a canopy; the collision pass then answered that by
   // deleting the tree, which cost half the planting to fix a spacing mistake.
   // Two lines two tiles apart both survive.
+  // Offset half a tile from the tree spacing so a lamp stands midway between
+  // two trees rather than in the same place as one.
   for (const z of grid.vertical) {
     if (Math.abs(z % (TILE * 2)) > 0.01) continue
-    if (Math.abs(z - road.z) < TILE) continue
-    lamps.push({ key: `lz-${z}`, pos: [road.x + TILE * 1.3, PAVEMENT, z] })
+    const at = z + TILE / 2
+    if (Math.abs(at - road.z) < TILE) continue
+    const x = road.x + TILE * 1.3
+    lamps.push({
+      key: `lz-${z}`,
+      pos: [x, PAVEMENT, at],
+      // This loop lines the vertical street, so the carriageway is at -x. At
+      // 1.3 tiles out the lamp is nearer the crossing street than its own, and
+      // asking which axis is closest turned every arm the wrong way.
+      rotY: aim(FRONT.lamp, [-1, 0]),
+    })
   }
   for (const x of grid.horizontal) {
     if (Math.abs(x % (TILE * 2)) > 0.01) continue
-    if (Math.abs(x - road.x) < TILE) continue
+    const at = x + TILE / 2
+    if (Math.abs(at - road.x) < TILE) continue
+    const z = road.z + TILE * 1.3
     lamps.push({
       key: `lx-${x}`,
-      pos: [x, PAVEMENT, road.z + TILE * 1.3],
-      rotY: Math.PI / 2,
+      pos: [at, PAVEMENT, z],
+      rotY: aim(FRONT.lamp, [0, -1]),
     })
   }
 
@@ -253,13 +307,13 @@ export default function Props({ layout }: PropsProps) {
     ['b1', road.x + TILE * 0.7, road.z + TILE * 1.4],
     ['b2', foodBank.x - TILE * 1.1, grid.avenueZ + TILE * 0.7],
   ] as const) {
-    benches.push({ key, pos: [x, PAVEMENT, z], rotY: facingStreet(layout, x, z) })
+    benches.push({ key, pos: [x, PAVEMENT, z], rotY: aimAtStreet(layout, x, z, FRONT.bench) })
   }
   for (const [key, x, z] of [
     ['p1', road.x - TILE * 0.7, road.z + TILE * 1.3],
     ['p2', foodBank.x + TILE * 1.2, grid.avenueZ + TILE * 0.7],
   ] as const) {
-    planters.push({ key, pos: [x, PAVEMENT, z], rotY: facingStreet(layout, x, z) })
+    planters.push({ key, pos: [x, PAVEMENT, z], rotY: aimAtStreet(layout, x, z, FRONT.planter) })
   }
 
   // A few cars parked along the kerb. Parked, never driving — see the note on
