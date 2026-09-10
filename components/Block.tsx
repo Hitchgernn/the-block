@@ -1,17 +1,17 @@
 'use client'
 
-import { Suspense, useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import type { Plot as PlotData, Shift } from '@/lib/types'
+import type { Plot as PlotData } from '@/lib/types'
 import Plot from '@/components/Plot'
 import Street from '@/components/Street'
 import Props from '@/components/Props'
 import Skyline from '@/components/Skyline'
 import { TILE, preloadSceneAssets } from '@/components/scene-assets'
 import FoodBank from '@/components/FoodBank'
-import Forecourt from '@/components/Forecourt'
+import SceneLayer from '@/components/SceneLayer'
 import { KERB, PALETTE, layoutPlots } from '@/components/scene-utils'
 
 interface BlockProps {
@@ -23,7 +23,6 @@ interface BlockProps {
   compact: boolean
   reducedMotion: boolean
   /** Upcoming shifts, soonest first. The next one is drawn on the forecourt. */
-  upcomingShifts: Shift[]
   foodBankSelected: boolean
   onSelectFoodBank: () => void
 }
@@ -140,16 +139,12 @@ export default function Block({
   onSelect,
   compact,
   reducedMotion,
-  upcomingShifts,
   foodBankSelected,
   onSelectFoodBank,
 }: BlockProps) {
   const layout = useMemo(() => layoutPlots(plots), [plots])
   const { placements, foodBank, sceneDepth } = layout
 
-  // The forecourt shows the next shift, which is the one the agent is about to
-  // act on. deriveShifts already returns them soonest first.
-  const nextShift = upcomingShifts[0] ?? null
 
   // Content runs from behind the food bank to the front row of lots. Aim at the
   // middle of that, not at the middle of the housing grid.
@@ -245,35 +240,33 @@ export default function Block({
       </group>
 
       {/*
-        Everything that loads a GLB goes inside Suspense.
+        Every layer that loads a GLB gets its own boundary. useGLTF suspends,
+        and a suspending component with no boundary above it unmounts the whole
+        subtree — including <color attach="background"> — which renders the
+        canvas plain white and throws no error to explain itself. Lights, fog
+        and framing stay outside so the scene has its dusk ground from the first
+        frame.
 
-        useGLTF suspends, and a suspending component with no boundary unmounts
-        the whole subtree — including <color attach="background"> — which
-        renders the canvas plain white with no error to show for it. Lights,
-        fog and framing stay outside so the scene has its dusk ground from the
-        first frame rather than flashing white while assets arrive.
+        One boundary per layer rather than one for all of them: shared, the
+        streets waited on the skyline's Draco decode and looked like they had
+        failed to render. See components/SceneLayer.tsx.
       */}
-      {/*
-        Everything that touches a GLB lives inside this boundary. useGLTF
-        suspends, and a suspending component with no boundary above it unmounts
-        the entire subtree — including <color attach="background"> — which
-        renders the canvas plain white and throws no error to explain itself.
-        Adding an asset to a component out here is the way this breaks.
-      */}
-      <Suspense fallback={null}>
+      <SceneLayer name="street">
         <Street layout={layout} />
+      </SceneLayer>
+      <SceneLayer name="street furniture">
         <Props layout={layout} />
+      </SceneLayer>
+      <SceneLayer name="skyline">
         <Skyline layout={layout} />
+      </SceneLayer>
+      <SceneLayer name="food bank">
         <FoodBank
           position={[foodBank.x, 0, foodBank.z]}
           selected={foodBankSelected}
           onSelect={onSelectFoodBank}
         />
-        <Forecourt
-          position={[foodBank.x, 0, foodBank.z + 5.2]}
-          shift={nextShift}
-        />
-      </Suspense>
+      </SceneLayer>
 
 
       {placements.map(({ plot, x, z }) => (

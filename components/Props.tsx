@@ -109,19 +109,13 @@ function settle(layout: BlockLayout, list: Placement[]) {
 /**
  * Which way each asset's front points before any rotation.
  *
- * Measured from the GLB bounds rather than guessed, because guessing is what
- * put the bus shelter's back to the street:
- *
- *   street-lamp-01  x -0.28..1.51, z -0.27..0.44  pole at origin, arm at +x
- *   bus-shelter-01  x -2.20..2.71, z -0.81..1.10  back wall +z, opening -z
- *
- * The shelter carried rotY = PI, which pointed its +z back wall at the avenue
- * and left people waiting for a shift looking into a garden. The lamps carried
- * no rotation at all, so every arm reached over the houses.
+ * Measured from the GLB bounds rather than guessed. street-lamp-01 runs
+ * x -0.28..1.51 with the pole at the origin, so its arm reaches +x; it carried
+ * no rotation at all, which left every arm hanging over the houses instead of
+ * the road.
  */
 const FRONT = {
   lamp: [1, 0],
-  shelter: [0, -1],
   bench: [0, 1],
   planter: [0, 1],
 } as const
@@ -155,8 +149,8 @@ function aimAtStreet(
   const toAvenue = z - layout.avenueZ
   const dz = Math.abs(toCross) < Math.abs(toAvenue) ? toCross : toAvenue
 
-  // A tie goes to the street running across, which is the one a shelter or a
-  // bench on a corner sits along.
+  // A tie goes to the street running across, which is the one a bench on a
+  // corner sits along.
   const towards: [number, number] =
     Math.abs(dx) < Math.abs(dz) ? [dx > 0 ? -1 : 1, 0] : [0, dz > 0 ? -1 : 1]
 
@@ -165,7 +159,6 @@ function aimAtStreet(
 
 /** Roughly how much pavement each thing takes up, in world units. */
 const FOOTPRINT = {
-  shelter: 2.3,
   car: 1.6,
   tree: 1.15,
   bench: 0.9,
@@ -178,13 +171,12 @@ const FOOTPRINT = {
  *
  * Every prop here is placed by its own rule — trees down the verge at 0.78 of
  * a tile, lamps at 0.74 — and no rule knew what the others had already put
- * there. Those two numbers are 0.16 apart, so a lamp grew out of a tree at
- * every second spacing, and a tree stood 0.88 from the middle of the bus
- * shelter, through its roof.
+ * there. Those two numbers were 0.16 apart, so a lamp grew out of a tree at
+ * every second spacing.
  *
- * Earlier lists win, so the fixed things — the shelter, the lamps that have to
- * be evenly spaced to read as infrastructure — keep their spots and the trees,
- * of which there are many and no particular one matters, give way.
+ * Earlier lists win, so the fixed things — the lamps that have to be evenly
+ * spaced to read as infrastructure — keep their spots and the trees, of which
+ * there are many and no particular one matters, give way.
  */
 function deconflict(lists: [Placement[], number][]) {
   const taken: { x: number; z: number; r: number }[] = []
@@ -213,19 +205,6 @@ export default function Props({ layout }: PropsProps) {
     bare: [],
   }
   const lamps: Placement[] = []
-  // On the pavement flanking the vertical street where it meets the avenue,
-  // which is the corner people actually walk to the shift from. It used to
-  // stand at (8.8, -12.8) — inside the lot at (8, -12), its canopy across
-  // somebody's house. It is placed before anything else so nothing else lands
-  // on top of it.
-  const shelters: Placement[] = [
-    {
-      key: 'shelter',
-      pos: [layout.road.x - TILE, PAVEMENT, layout.avenueZ + TILE],
-      // It lines the avenue, which is at -z from here.
-      rotY: aim(FRONT.shelter, [0, -1]),
-    },
-  ]
   const benches: Placement[] = []
   const planters: Placement[] = []
   const cars: Placement[] = []
@@ -401,10 +380,9 @@ export default function Props({ layout }: PropsProps) {
   }
 
   // Then, with everything on its real ground, make sure no two things are in
-  // the same place. Order is priority: the shelter and the evenly spaced lamps
-  // hold their spots, trees give way.
+  // the same place. Order is priority: the evenly spaced lamps hold their
+  // spots, trees give way.
   deconflict([
-    [shelters, FOOTPRINT.shelter],
     [cars, FOOTPRINT.car],
     [lamps, FOOTPRINT.lamp],
     [benches, FOOTPRINT.bench],
@@ -426,7 +404,6 @@ export default function Props({ layout }: PropsProps) {
       <Scattered asset="bench" placements={benches} />
       <Scattered asset="planter" placements={planters} />
       <Scattered asset="car" placements={cars} />
-      <Scattered asset="busShelter" placements={shelters} />
     </group>
   )
 }

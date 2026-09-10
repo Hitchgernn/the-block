@@ -39,7 +39,6 @@ export const ASSETS = {
   bench: 'bench-01',
   planter: 'flower-planter-01',
   streetLamp: 'street-lamp-01',
-  busShelter: 'bus-shelter-01',
   car: 'car-sedan-01',
   apartment: 'apartment-block-01',
   skyscraper: 'glass-skyscraper-01',
@@ -95,7 +94,6 @@ const TINT: Record<AssetName, string> = {
   bench: KERB,
   planter: '#4f6b48',
   streetLamp: KERB,
-  busShelter: KERB,
   // Lifted well above the other street furniture: a parked car sat at the
   // same value as the kerb and simply disappeared into the road.
   car: '#7d8ba6',

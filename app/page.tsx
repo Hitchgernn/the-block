@@ -163,7 +163,6 @@ export default function Home() {
           }}
           compact={compact}
           reducedMotion={reducedMotion}
-          upcomingShifts={upcomingShifts}
           foodBankSelected={foodBankSelected}
           onSelectFoodBank={() => {
             setSelectedId(null)
