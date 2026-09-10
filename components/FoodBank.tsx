@@ -49,17 +49,28 @@ export default function FoodBank({ position, selected, onSelect }: FoodBankProps
   const doorHeight = 1.5
   const canopyY = GROUND + doorHeight + 0.5
 
-  // Selecting it lifts the building a hair, which is the cue the paving used
-  // to carry before the street took the paving over.
   return (
     <group
       name="food-bank"
-      position={[position[0], position[1] + (selected ? 0.04 : 0), position[2]]}
+      position={position}
       onClick={(event) => {
         event.stopPropagation()
         onSelect()
       }}
     >
+      {/*
+        Selecting it used to lift the building 0.04, which is not a cue — the
+        selected and unselected frames were pixel-identical. A plot marks
+        itself with a --stone pad and this does the same, so the two read as
+        the same gesture. --stone, never --lamp: a highlight is not somebody
+        showing up.
+      */}
+      {selected ? (
+        <mesh position={[0, GROUND + 0.015, 0]}>
+          <boxGeometry args={[WIDTH + 1.2, 0.03, DEPTH + 1.2]} />
+          <meshStandardMaterial color={PALETTE.stone} roughness={1} />
+        </mesh>
+      ) : null}
       <group>
         {/* The hall. One long mass, wider than it is tall, which is what makes
             it read as somewhere a queue forms rather than somewhere a family
