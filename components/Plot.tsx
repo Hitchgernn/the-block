@@ -10,6 +10,7 @@ import {
   jitterFor,
   lampColor,
   lampIntensity,
+  LOT,
 } from '@/components/scene-utils'
 
 interface PlotProps {
@@ -142,8 +143,12 @@ export default function Plot({
   // Sized for the 4-unit lot the asset pack's tiles establish. At the old
   // scale a street lamp from the pack (4.10 tall) stood higher than a finished
   // house and a car (3.06 long) was longer than a house was tall.
-  const width = 2.3 * jitter.widthScale
-  const depth = 2.3 * jitter.depthScale
+  // Sized so the worst case — widest jitter, plus an annex, plus the offset
+  // inside the lot — still stops short of the lot edge. At 2.3 the reach was
+  // 2.09 against a 2.00 half-lot, so neighbours overlapped by about 0.2 and the
+  // row read as one continuous terrace.
+  const width = 1.95 * jitter.widthScale
+  const depth = 1.95 * jitter.depthScale
   const baseHeight =
     plot.stage >= 4 ? 3.3 : plot.stage === 3 ? 2.4 : plot.stage === 2 ? 1.7 : 0
   const height = baseHeight * jitter.heightScale
@@ -155,21 +160,23 @@ export default function Plot({
     <group position={position}>
       {selected ? (
         <mesh position={[0, 0.03, 0]} rotation-y={jitter.padRotation}>
-          <boxGeometry args={[3.8, 0.05, 3.8]} />
+          <boxGeometry args={[LOT - 0.1, 0.05, LOT - 0.1]} />
           <meshStandardMaterial color={PALETTE.stone} roughness={1} />
         </mesh>
       ) : null}
 
       {/* The lot itself. Empty is --stone-dim: neutral, never negative. */}
+      {/* Square to the grid, not jittered: the pads tile the block, and a
+          rotated pad leaves a wedge of bare ground against its neighbour. The
+          building on top still carries the jitter. */}
       <mesh
         position={[0, 0.06, 0]}
-        rotation-y={jitter.padRotation}
         onClick={(event) => {
           event.stopPropagation()
           onSelect(plot.volunteerId)
         }}
       >
-        <boxGeometry args={[3.5, 0.12, 3.5]} />
+        <boxGeometry args={[LOT, 0.12, LOT]} />
         <meshStandardMaterial
           color={plot.stage === 0 ? PALETTE.stoneDim : '#3b4c64'}
           roughness={1}
@@ -185,14 +192,14 @@ export default function Plot({
         which is exactly what a volunteer who has joined but not yet come is.
       */}
       {plot.stage === 0 ? (
-        <group position={[0, 0.13, 0]} rotation-y={jitter.padRotation}>
+        <group position={[0, 0.13, 0]}>
           {([[0, 1], [0, -1], [1, 0], [-1, 0]] as const).map(([ax, az]) => (
             <mesh
               key={`${ax}${az}`}
-              position={[ax * 1.42, 0, az * 1.42]}
+              position={[ax * 1.72, 0, az * 1.72]}
             >
               <boxGeometry
-                args={[ax === 0 ? 2.9 : 0.09, 0.05, az === 0 ? 2.9 : 0.09]}
+                args={[ax === 0 ? 3.5 : 0.09, 0.05, az === 0 ? 3.5 : 0.09]}
               />
               <meshStandardMaterial color={SLAB} roughness={1} />
             </mesh>
@@ -222,12 +229,12 @@ export default function Plot({
         {plot.stage >= 3 && jitter.hasAnnex ? (
           <mesh
             position={[
-              jitter.annexSide * (width / 2 + 0.3),
+              jitter.annexSide * (width / 2 + 0.18),
               0.22 + height * 0.32,
               depth * 0.12,
             ]}
           >
-            <boxGeometry args={[0.62, height * 0.64, depth * 0.72]} />
+            <boxGeometry args={[0.5, height * 0.64, depth * 0.72]} />
             <meshStandardMaterial color={PALETTE.stone} roughness={1} flatShading />
           </mesh>
         ) : null}
