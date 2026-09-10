@@ -159,7 +159,7 @@ export interface BlockLayout {
    */
   ground: { halfX: number; nearZ: number; farZ: number }
   /**
-   * Every cell the lot grid occupies, keyed "x,z".
+   * Every cell a volunteer's lot occupies, keyed "x,z".
    *
    * The streets are classified by distance from a road axis, and the back row
    * of lots happens to sit exactly one tile from the avenue — so six of the
@@ -167,9 +167,11 @@ export interface BlockLayout {
    * their own pad and z-fighting against it. Street.tsx asks here instead of
    * working the lot positions out a second time.
    *
-   * The whole grid rectangle is listed, not just the occupied lots: an empty
-   * cell that took a pavement tile while its neighbour did not would leave the
-   * block's edge ragged.
+   * Only the occupied ones. The whole rectangle used to be listed and the
+   * spare cells were drawn as marked-out lots, which put five bright empty
+   * slabs on a block of thirty cells — a third of the town reading as pale
+   * rectangle. A cell with no volunteer is not an empty lot waiting for
+   * somebody; it is ground the town has not reached yet, so it is lawn.
    */
   lotCells: Set<string>
   /**
@@ -183,15 +185,6 @@ export interface BlockLayout {
    */
   park: { x: number; z: number }
   parkCells: Set<string>
-  /**
-   * Lot cells the grid lays out but no volunteer occupies.
-   *
-   * The grid is rectangular and the headcount rarely fills it — 23 volunteers
-   * in 24 cells — so one lot had a street laid around it and nothing drawn on
-   * it. These are marked out as ground waiting for someone rather than left as
-   * a hole in the block.
-   */
-  vacantLots: [number, number][]
 }
 
 /** How Street.tsx and layoutPlots agree on which cell is which. */
@@ -251,18 +244,9 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
     return { plot, x, z }
   })
 
-  // The full rectangle, including cells no volunteer has yet, so the streets
-  // stop at the same line whatever the headcount.
   const lotCells = new Set<string>()
-  for (let col = 0; col < gridCols; col += 1) {
-    for (let row = 0; row < gridRows; row += 1) {
-      lotCells.add(
-        cellKey(
-          col * LOT + (col >= colBreak ? ROAD_GAP : 0) - width / 2 + LOT / 2,
-          row * LOT + (row >= rowBreak ? ROAD_GAP : 0) - depth / 2 + LOT / 2,
-        ),
-      )
-    }
+  for (const placement of placements) {
+    lotCells.add(cellKey(placement.x, placement.z))
   }
 
   // Beside the block on the walking side, snapped to a cell corner so the four
@@ -305,22 +289,11 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
     }
   }
 
-  const taken = new Set(placements.map((p) => cellKey(p.x, p.z)))
-  const vacantLots: [number, number][] = []
-  for (let col = 0; col < gridCols; col += 1) {
-    for (let row = 0; row < gridRows; row += 1) {
-      const x = col * LOT + (col >= colBreak ? ROAD_GAP : 0) - width / 2 + LOT / 2
-      const z = row * LOT + (row >= rowBreak ? ROAD_GAP : 0) - depth / 2 + LOT / 2
-      if (!taken.has(cellKey(x, z))) vacantLots.push([x, z])
-    }
-  }
-
   return {
     placements,
     width,
     depth,
     lotCells,
-    vacantLots,
     park,
     parkCells,
     road: { x: roadX, z: roadZ },
