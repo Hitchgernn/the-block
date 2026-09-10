@@ -13,6 +13,12 @@
 // brick-ish tone and kept flagging olive foliage as a clipped building, which
 // sent me chasing a framing bug that did not exist.
 
+// Run this on the bare scene, not with a panel open. The digest's text is
+// --stone, the same cream as a lit wall, so its bottom line reads as a
+// building clipped by the viewport edge — five pixels of false positive that
+// no amount of camera margin will move, because it is not the camera.
+
+
 import { execFileSync } from 'node:child_process'
 
 const file = process.argv[2]

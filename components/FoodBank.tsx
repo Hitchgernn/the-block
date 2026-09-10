@@ -55,13 +55,12 @@ export default function FoodBank({ position, selected, onSelect }: FoodBankProps
     <group
       name="food-bank"
       position={[position[0], position[1] + (selected ? 0.04 : 0), position[2]]}
+      onClick={(event) => {
+        event.stopPropagation()
+        onSelect()
+      }}
     >
-      <group
-        onClick={(event) => {
-          event.stopPropagation()
-          onSelect()
-        }}
-      >
+      <group>
         {/* The hall. One long mass, wider than it is tall, which is what makes
             it read as somewhere a queue forms rather than somewhere a family
             lives. */}
