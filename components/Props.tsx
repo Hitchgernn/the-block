@@ -232,7 +232,14 @@ export default function Props({ layout }: PropsProps) {
 
   // Just off the carriageway edge, inside the planting strip the wider road
   // corridor opens up — not at +/- TILE, which lands on the lot columns.
-  const verges = [road.x - TILE * 0.78, road.x + TILE * 0.78]
+  //
+  // One number for the whole planting line. The lamps stood on a second offset
+  // of their own, which first put them 0.16 from the trees — inside the
+  // canopies — and then, pushed out to the far kerb to separate them, left
+  // them off the line altogether and too far from the road to light it. They
+  // share the line now and are staggered along it instead.
+  const VERGE = TILE * 0.78
+  const verges = [road.x - VERGE, road.x + VERGE]
   const kinds = ['street', 'apple', 'conifer', 'bare'] as const
 
   // Planting down both pavements of the vertical street.
@@ -259,7 +266,7 @@ export default function Props({ layout }: PropsProps) {
     if (seed.depthScale < 1.0) continue
     trees.street.push({
       key: `xt-${x}`,
-      pos: [x + seed.offsetX, PAVEMENT, road.z + TILE * 0.78],
+      pos: [x + seed.offsetX, PAVEMENT, road.z + VERGE],
       rotY: seed.rotation * 6,
       scale: 0.85 + seed.heightScale * 0.2,
     })
@@ -272,13 +279,14 @@ export default function Props({ layout }: PropsProps) {
   // lamp stood inside a canopy; the collision pass then answered that by
   // deleting the tree, which cost half the planting to fix a spacing mistake.
   // Two lines two tiles apart both survive.
-  // Offset half a tile from the tree spacing so a lamp stands midway between
-  // two trees rather than in the same place as one.
+  // On the tree line, offset half a tile along it, so each lamp stands midway
+  // between two trees. Two units apart against a 1.6 clearance, and the arm
+  // reaches from 3.12 to 1.61 — over the kerb and above the carriageway.
   for (const z of grid.vertical) {
     if (Math.abs(z % (TILE * 2)) > 0.01) continue
     const at = z + TILE / 2
     if (Math.abs(at - road.z) < TILE) continue
-    const x = road.x + TILE * 1.3
+    const x = road.x + VERGE
     lamps.push({
       key: `lz-${z}`,
       pos: [x, PAVEMENT, at],
@@ -292,7 +300,7 @@ export default function Props({ layout }: PropsProps) {
     if (Math.abs(x % (TILE * 2)) > 0.01) continue
     const at = x + TILE / 2
     if (Math.abs(at - road.x) < TILE) continue
-    const z = road.z + TILE * 1.3
+    const z = road.z + VERGE
     lamps.push({
       key: `lx-${x}`,
       pos: [at, PAVEMENT, z],
