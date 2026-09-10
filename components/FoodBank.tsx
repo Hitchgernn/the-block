@@ -52,7 +52,10 @@ export default function FoodBank({ position, selected, onSelect }: FoodBankProps
   // Selecting it lifts the building a hair, which is the cue the paving used
   // to carry before the street took the paving over.
   return (
-    <group position={[position[0], position[1] + (selected ? 0.04 : 0), position[2]]}>
+    <group
+      name="food-bank"
+      position={[position[0], position[1] + (selected ? 0.04 : 0), position[2]]}
+    >
       <group
         onClick={(event) => {
           event.stopPropagation()

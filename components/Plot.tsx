@@ -163,7 +163,7 @@ export default function Plot({
   const slabTop = SURFACE_TOP.sidewalk
 
   return (
-    <group position={position}>
+    <group name={`plot-${plot.volunteerId}`} position={position}>
       {selected ? (
         <mesh position={[0, slabTop + 0.03, 0]} rotation-y={jitter.padRotation}>
           <boxGeometry args={[LOT - 0.1, 0.05, LOT - 0.1]} />

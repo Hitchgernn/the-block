@@ -16,6 +16,14 @@ export const PALETTE = {
 /** Foundation slabs sit between the empty-lot tone and a finished wall. */
 export const SLAB = '#b6b2ab'
 export const ROAD = '#22303f'
+/**
+ * The open ground the town's plinth stands on, well outside the block.
+ *
+ * Exported because the skyline stands on it too: the towers were placed at
+ * y=0 and floated 0.9 above it, which is the sort of thing nobody sees until
+ * the camera swings low.
+ */
+export const GROUND_PLANE_Y = -0.9
 /** Street furniture. Deliberately outside the palette's warm end: none of it
  *  is allowed to glow, because --lamp only ever means someone showed up. */
 export const KERB = '#46566b'
@@ -217,6 +225,24 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
   const width = gridCols * LOT + ROAD_GAP
   const depth = gridRows * LOT + ROAD_GAP
 
+  const roadX = colBreak * LOT + ROAD_GAP / 2 - width / 2
+  const roadZ = rowBreak * LOT + ROAD_GAP / 2 - depth / 2
+
+  /**
+   * Snap to the cell grid — the one anchored on the streets, not on the world
+   * origin.
+   *
+   * Street.tsx steps its cells from road.x and road.z, and road.z is only 0
+   * when the volunteer count happens to make it so. At 25 volunteers it is -2,
+   * and everything that snapped with Math.round(v / LOT) * LOT then landed
+   * exactly half a tile off every cell centre: the avenue never fell on a cell
+   * so its crossing got no junction piece, and the food bank's and the park's
+   * reserved cells named cells that do not exist, so no paving was laid and
+   * both stood on grass.
+   */
+  const snapX = (v: number) => roadX + Math.round((v - roadX) / LOT) * LOT
+  const snapZ = (v: number) => roadZ + Math.round((v - roadZ) / LOT) * LOT
+
   const placements = plots.map((plot, index) => {
     const col = index % COLS
     const row = Math.floor(index / COLS)
@@ -241,9 +267,11 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
 
   // Beside the block on the walking side, snapped to a cell corner so the four
   // paving tiles below land on four whole cells.
+  // Its centre is a cell *corner*, so the four paving tiles below land on four
+  // whole cells.
   const park = {
-    x: Math.round((width / 2 + LOT * 1.5) / LOT) * LOT - LOT / 2,
-    z: Math.round(-depth / 6 / LOT) * LOT - LOT / 2,
+    x: snapX(width / 2 + LOT * 1.5) - LOT / 2,
+    z: snapZ(-depth / 6) - LOT / 2,
   }
   const parkCells = new Set<string>()
   for (const dx of [-LOT / 2, LOT / 2]) {
@@ -257,8 +285,7 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
    * happened to be, so no tile centre landed on it and the crossing never got
    * an intersection piece.
    */
-  const avenueZ =
-    Math.round((-depth / 2 - FORECOURT_DEPTH + LOT * 1.6) / LOT) * LOT
+  const avenueZ = snapZ(-depth / 2 - FORECOURT_DEPTH + LOT * 1.6)
 
   /**
    * The food bank stands two cells beyond the avenue, on paving of its own.
@@ -274,7 +301,7 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
   const foodBankCells = new Set<string>()
   for (const dx of [-LOT, 0, LOT]) {
     for (const dz of [LOT, 0, -LOT]) {
-      foodBankCells.add(cellKey(dx, foodBankZ + dz))
+      foodBankCells.add(cellKey(roadX + dx, foodBankZ + dz))
     }
   }
 
@@ -296,11 +323,8 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
     vacantLots,
     park,
     parkCells,
-    road: {
-      x: colBreak * LOT + ROAD_GAP / 2 - width / 2,
-      z: rowBreak * LOT + ROAD_GAP / 2 - depth / 2,
-    },
-    foodBank: { x: 0, z: foodBankZ },
+    road: { x: roadX, z: roadZ },
+    foodBank: { x: roadX, z: foodBankZ },
     foodBankCells,
     sceneDepth: depth + FORECOURT_DEPTH * 2,
     avenueZ,

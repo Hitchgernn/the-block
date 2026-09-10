@@ -29,6 +29,7 @@ function Scattered({
 
   return (
     <Instances
+      name={asset}
       geometry={loaded.geometry}
       material={loaded.material}
       limit={Math.max(1, placements.length)}
@@ -159,6 +160,8 @@ function aimAtStreet(
 
 /** Roughly how much pavement each thing takes up, in world units. */
 const FOOTPRINT = {
+  /** The food bank is 6.4 by 6.26, plus its canopy. */
+  building: 4.2,
   car: 1.6,
   tree: 1.15,
   bench: 0.9,
@@ -349,11 +352,27 @@ export default function Props({ layout }: PropsProps) {
       scale: 0.85 + seed.heightScale * 0.2,
     })
   }
+  // The two benches face each other across the park, which is what benches in
+  // a park do. Everything else here faces the street: the planters were pushed
+  // with no rotation at all, so they sat square to the world rather than to
+  // anything around them.
   benches.push({ key: 'pb1', pos: [parkX - TILE * 0.4, PLAZA, parkZ], rotY: Math.PI / 2 })
   benches.push({ key: 'pb2', pos: [parkX + TILE * 0.4, PLAZA, parkZ], rotY: -Math.PI / 2 })
-  planters.push({ key: 'pp1', pos: [parkX, PLAZA, parkZ - TILE * 0.75] })
-  planters.push({ key: 'pp2', pos: [parkX, PLAZA, parkZ + TILE * 0.75] })
-  lamps.push({ key: 'pl1', pos: [parkX + TILE * 0.95, PLAZA, parkZ - TILE * 0.6] })
+  for (const [key, x, z] of [
+    ['pp1', parkX, parkZ - TILE * 0.75],
+    ['pp2', parkX, parkZ + TILE * 0.75],
+  ] as const) {
+    planters.push({
+      key,
+      pos: [x, PLAZA, z],
+      rotY: aimAtStreet(layout, x, z, FRONT.planter),
+    })
+  }
+  lamps.push({
+    key: 'pl1',
+    pos: [parkX + TILE * 0.95, PLAZA, parkZ - TILE * 0.6],
+    rotY: aim(FRONT.lamp, [-1, 0]),
+  })
 
   // Everything above chose where it stands; this decides what it stands on.
   // The park's cells classify as plaza because it lays its own paving there,
@@ -373,7 +392,14 @@ export default function Props({ layout }: PropsProps) {
   // Then, with everything on its real ground, make sure no two things are in
   // the same place. Order is priority: the evenly spaced lamps hold their
   // spots, trees give way.
+  // The food bank claims its own footprint first, so nothing plants itself
+  // inside the building. A street tree was growing through its front wall.
+  const building: Placement[] = [
+    { key: 'food-bank', pos: [foodBank.x, 0, foodBank.z] },
+  ]
+
   deconflict([
+    [building, FOOTPRINT.building],
     [cars, FOOTPRINT.car],
     [lamps, FOOTPRINT.lamp],
     [benches, FOOTPRINT.bench],

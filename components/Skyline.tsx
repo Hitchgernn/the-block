@@ -4,7 +4,7 @@ import { Instance, Instances } from '@react-three/drei'
 import type { AssetName } from '@/components/scene-assets'
 import { useSceneAsset } from '@/components/scene-assets'
 import type { BlockLayout } from '@/components/scene-utils'
-import { jitterFor } from '@/components/scene-utils'
+import { GROUND_PLANE_Y, jitterFor } from '@/components/scene-utils'
 
 interface SkylineProps {
   layout: BlockLayout
@@ -23,6 +23,7 @@ function Towers({ asset, towers }: { asset: AssetName; towers: Tower[] }) {
 
   return (
     <Instances
+      name={asset}
       geometry={loaded.geometry}
       material={loaded.material}
       limit={Math.max(1, towers.length)}
@@ -81,9 +82,10 @@ export default function Skyline({ layout }: SkylineProps) {
     if (facing > 0.45) continue
 
     const distance = radius * (1 + seed.heightScale * 0.3) + Math.abs(seed.offsetX) * 5
+    // On the open ground, not at y=0 — which was 0.9 above it.
     const pos: [number, number, number] = [
       Math.cos(angle) * distance,
-      0,
+      GROUND_PLANE_Y,
       Math.sin(angle) * distance,
     ]
     const tower: Tower = {

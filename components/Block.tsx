@@ -13,7 +13,7 @@ import { TILE, preloadSceneAssets } from '@/components/scene-assets'
 import FoodBank from '@/components/FoodBank'
 import SceneLayer from '@/components/SceneLayer'
 import VacantLot from '@/components/VacantLot'
-import { KERB, PALETTE, layoutPlots } from '@/components/scene-utils'
+import { GROUND_PLANE_Y, KERB, PALETTE, layoutPlots } from '@/components/scene-utils'
 
 interface BlockProps {
   plots: PlotData[]
@@ -121,6 +121,11 @@ function Framing({
     cam.lookAt(lookAt)
     cam.updateProjectionMatrix()
 
+    // A handle for scripts/audit-scene.mjs, which walks the real scene graph
+    // rather than re-deriving the layout — a second copy of the maths is what
+    // caused most of the bugs it looks for.
+    ;(window as unknown as { __blockScene?: THREE.Scene }).__blockScene = scene
+
     // Fog only ever eats the empty ground past the block, so it reads as sky.
     if (scene.fog instanceof THREE.Fog) {
       // Far enough to leave the skyline as a readable silhouette rather than
@@ -203,7 +208,7 @@ export default function Block({
 
       {/* Dropped below the plinth's top face. Both sat at y=0 and fought for
           the same depth, which striped the slab with banding. */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, -0.9, 0]}>
+      <mesh name="ground-plane" rotation-x={-Math.PI / 2} position={[0, GROUND_PLANE_Y, 0]}>
         {/* Large enough that its far edge always falls beyond fog.far — at a
             wide mobile fov a smaller plane showed its horizon as a hard
             silhouette against the sky. */}
@@ -221,7 +226,7 @@ export default function Block({
         raised ground with the city below and behind — the composition in
         reference-1 and reference-3.
       */}
-      <group position={[0, 0, plinth.centre]}>
+      <group name="plinth" position={[0, 0, plinth.centre]}>
         <mesh position={[0, -PLINTH_HEIGHT / 2, 0]}>
           <boxGeometry
             args={[plinth.width, PLINTH_HEIGHT, plinth.depth]}

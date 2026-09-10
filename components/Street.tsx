@@ -29,6 +29,7 @@ function Tiles({
 
   return (
     <Instances
+      name={asset}
       geometry={loaded.geometry}
       material={loaded.material}
       limit={Math.max(1, placements.length)}

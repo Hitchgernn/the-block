@@ -20,7 +20,7 @@ export default function VacantLot({ position }: { position: [number, number, num
   const top = SURFACE_TOP.sidewalk
 
   return (
-    <group position={position}>
+    <group name="vacant-lot" position={position}>
       <mesh position={[0, top / 2, 0]}>
         <boxGeometry args={[LOT, top, LOT]} />
         <meshStandardMaterial color={PALETTE.stoneDim} roughness={1} />
