@@ -108,6 +108,16 @@ From `design.md`, and they are checked:
 
 Seeded inputs, real logic. **Disclose this in the README and the video** (`prd.md` §10).
 
+**Maria and James look small in the scene, and that is correct.** They carry the
+roster's two highest reliabilities (0.95 and 0.92) but only ever worked Saturday
+9am — one slot a week — and lapsed three weeks in, so they finish on two
+completed shifts each, 21st and 23rd of 25. Their plots are foundations. That
+reads at first like the docs contradicting the data; it does not. Growth stage
+is driven by shifts covered, which is the one thing a building claims to show,
+and someone dependable who came once a week for three weeks genuinely has a
+small record. Measured before changing anything — do not "fix" the seed for
+this.
+
 ## Scene cost, measured
 
 Measured at 25 volunteers, 1400x900:
