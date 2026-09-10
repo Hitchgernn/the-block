@@ -392,6 +392,21 @@ const WORDS = [
   'twelve',
 ]
 
+/**
+ * Sentence case, applied after the fact.
+ *
+ * These strings are built out of number words — "three", "twelve" — and a
+ * number word can land at the start of a sentence: "Saturday 9am is short
+ * three people. three of six committed so far." The digest gets away with it
+ * because it renders its second sentence as its own paragraph and CSS
+ * uppercases ::first-letter; the inspect panel puts both in one paragraph,
+ * where that rule cannot reach. Fixing the string rather than the stylesheet
+ * means every surface reads properly whatever it does with the markup.
+ */
+export function sentenceCase(text: string): string {
+  return text.replace(/(^|\.\s+)([a-z])/g, (_, lead: string, ch: string) => lead + ch.toUpperCase())
+}
+
 /** design.md section 7: the interface rarely says a number out loud. */
 export function numberWord(n: number): string {
   return WORDS[n] ?? String(n)
@@ -442,7 +457,7 @@ export function describePlot(plot: Plot): string {
   } else if (plot.lastActiveAt) {
     parts.push(`last here ${shortDate(plot.lastActiveAt)}`)
   }
-  return `${parts.join(', ')}.`
+  return sentenceCase(`${parts.join(', ')}.`)
 }
 
 /**
@@ -453,19 +468,23 @@ export function describePlot(plot: Plot): string {
 export function describeShift(shift: Shift): string {
   const when = `${shift.slot} on ${shortDate(shift.startsAt)}`
   if (shift.short === 0) {
-    return `${when} is covered. ${numberWord(shift.committed)} ${plural(
-      shift.committed,
+    return sentenceCase(
+      `${when} is covered. ${numberWord(shift.committed)} ${plural(
+        shift.committed,
+        'person',
+        'people',
+      )} coming.`,
+    )
+  }
+  return sentenceCase(
+    `${when} is short ${numberWord(shift.short)} ${plural(
+      shift.short,
       'person',
       'people',
-    )} coming.`
-  }
-  return `${when} is short ${numberWord(shift.short)} ${plural(
-    shift.short,
-    'person',
-    'people',
-  )}. ${numberWord(shift.committed)} of ${numberWord(
-    shift.minimum,
-  )} committed so far.`
+    )}. ${numberWord(shift.committed)} of ${numberWord(
+      shift.minimum,
+    )} committed so far.`,
+  )
 }
 
 
