@@ -185,7 +185,10 @@ export default function Props({ layout }: PropsProps) {
       })
     }
   }
-  for (const [i, [dx, dz]] of ([[-1.1, -1], [1.15, -0.9], [-0.95, 1.05], [1.05, 1.1]] as const).entries()) {
+  // Inside the paving, not past its edge. The four paving tiles reach one tile
+  // from centre, so trees at 1.1 stood on the grass beyond it while being
+  // placed at plaza height — half sunk, and clearly on the wrong ground.
+  for (const [i, [dx, dz]] of ([[-0.78, -0.72], [0.8, -0.66], [-0.7, 0.76], [0.74, 0.8]] as const).entries()) {
     const seed = jitterFor(`park-${i}`)
     const target = i % 2 === 0 ? trees.apple : trees.conifer
     target.push({
