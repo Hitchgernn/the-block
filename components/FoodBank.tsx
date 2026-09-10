@@ -106,29 +106,26 @@ export default function FoodBank({ position, selected, onSelect }: FoodBankProps
         />
       </mesh>
 
-      {/* Windows either side of the door, and a row above the canopy. */}
+      {/*
+        Windows either side of the door, and a row above the canopy.
+
+        Dark glass, not lit glass. These carried --lamp at 0.62 and 0.45, which
+        is eight gold lights nobody earned: design.md section 3 gives that
+        colour exactly one meaning, and the food bank has no growth stage and
+        no derived state to justify a single one of them. The doorway below is
+        the one exception the spec allows, because that doorway is the place
+        people actually show up to.
+      */}
       {[-2.3, -1.5, 1.5, 2.3].map((x) => (
         <mesh key={`low-${x}`} position={[x, GROUND + 0.95, front + 0.02]}>
           <boxGeometry args={[0.5, 0.9, 0.06]} />
-          <meshStandardMaterial
-            color="#2c3a4e"
-            emissive={PALETTE.lamp}
-            emissiveIntensity={0.62}
-            roughness={1}
-            toneMapped={false}
-          />
+          <meshStandardMaterial color="#2c3a4e" roughness={1} />
         </mesh>
       ))}
       {[-2.1, -0.7, 0.7, 2.1].map((x) => (
         <mesh key={`high-${x}`} position={[x, GROUND + 2.65, front + 0.02]}>
           <boxGeometry args={[0.62, 0.52, 0.06]} />
-          <meshStandardMaterial
-            color="#2c3a4e"
-            emissive={PALETTE.lamp}
-            emissiveIntensity={0.45}
-            roughness={1}
-            toneMapped={false}
-          />
+          <meshStandardMaterial color="#2c3a4e" roughness={1} />
         </mesh>
       ))}
 
