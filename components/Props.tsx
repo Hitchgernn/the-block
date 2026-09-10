@@ -90,12 +90,16 @@ function settle(layout: BlockLayout, list: Placement[]) {
   for (let i = list.length - 1; i >= 0; i -= 1) {
     const item = list[i]
     const surface = surfaceAt(layout, item.pos[0], item.pos[2])
-    if (surface === 'grass' || surface === 'pavement') {
-      item.pos = [
-        item.pos[0],
-        surface === 'grass' ? SURFACE_TOP.grass : SURFACE_TOP.sidewalk,
-        item.pos[2],
-      ]
+    const top =
+      surface === 'grass'
+        ? SURFACE_TOP.grass
+        : surface === 'plaza'
+          ? SURFACE_TOP.plaza
+          : surface === 'pavement'
+            ? SURFACE_TOP.sidewalk
+            : null
+    if (top !== null) {
+      item.pos = [item.pos[0], top, item.pos[2]]
     } else {
       list.splice(i, 1)
     }
@@ -199,20 +203,6 @@ export default function Props({ layout }: PropsProps) {
     cars.push({ key: `c${index}`, pos, rotY: index === 2 ? Math.PI / 2 : 0 })
   })
 
-  // Street furniture is placed by rule above and settled onto real ground
-  // here, before the park adds props that stand on paving of its own.
-  for (const list of [
-    trees.street,
-    trees.apple,
-    trees.conifer,
-    trees.bare,
-    lamps,
-    benches,
-    planters,
-  ]) {
-    settle(layout, list)
-  }
-
   // A pocket park on the way to the food bank.
   //
   // The town had one landmark and every corner of the block looked like every
@@ -225,8 +215,9 @@ export default function Props({ layout }: PropsProps) {
   // Positioned from the block's own extent, not from the food bank. Anchoring
   // it relative to the shop put it on top of the lot grid the moment the
   // volunteer count grew the block by a row.
-  const parkX = width / 2 + TILE * 1.7
-  const parkZ = -depth / 6
+  // Snapped to a cell corner by layoutPlots, so the four paving tiles below
+  // replace four whole ground cells instead of straddling sixteen of them.
+  const { x: parkX, z: parkZ } = layout.park
   const paving: Placement[] = []
   for (const dx of [-0.5, 0.5]) {
     for (const dz of [-0.5, 0.5]) {
@@ -254,6 +245,21 @@ export default function Props({ layout }: PropsProps) {
   planters.push({ key: 'pp1', pos: [parkX, PLAZA, parkZ - TILE * 0.75] })
   planters.push({ key: 'pp2', pos: [parkX, PLAZA, parkZ + TILE * 0.75] })
   lamps.push({ key: 'pl1', pos: [parkX + TILE * 0.95, PLAZA, parkZ - TILE * 0.6] })
+
+  // Everything above chose where it stands; this decides what it stands on.
+  // The park's cells classify as plaza because it lays its own paving there,
+  // so its benches and trees come out at plaza height without a special case.
+  for (const list of [
+    trees.street,
+    trees.apple,
+    trees.conifer,
+    trees.bare,
+    lamps,
+    benches,
+    planters,
+  ]) {
+    settle(layout, list)
+  }
 
   return (
     <group>

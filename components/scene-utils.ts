@@ -162,6 +162,17 @@ export interface BlockLayout {
    * block's edge ragged.
    */
   lotCells: Set<string>
+  /**
+   * Centre of the pocket park, on a cell corner so its four paving tiles land
+   * exactly on four cells.
+   *
+   * It used to sit at 24.8, -4.67 — off the grid by most of a tile, so each of
+   * its paving tiles straddled four ground cells and the grass tiles under it
+   * stood 0.31 proud of the paving. The park's cells are listed so the street
+   * lays nothing there.
+   */
+  park: { x: number; z: number }
+  parkCells: Set<string>
 }
 
 /** How Street.tsx and layoutPlots agree on which cell is which. */
@@ -217,11 +228,26 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
     }
   }
 
+  // Beside the block on the walking side, snapped to a cell corner so the four
+  // paving tiles below land on four whole cells.
+  const park = {
+    x: Math.round((width / 2 + LOT * 1.5) / LOT) * LOT - LOT / 2,
+    z: Math.round(-depth / 6 / LOT) * LOT - LOT / 2,
+  }
+  const parkCells = new Set<string>()
+  for (const dx of [-LOT / 2, LOT / 2]) {
+    for (const dz of [-LOT / 2, LOT / 2]) {
+      parkCells.add(cellKey(park.x + dx, park.z + dz))
+    }
+  }
+
   return {
     placements,
     width,
     depth,
     lotCells,
+    park,
+    parkCells,
     road: {
       x: colBreak * LOT + ROAD_GAP / 2 - width / 2,
       z: rowBreak * LOT + ROAD_GAP / 2 - depth / 2,
@@ -255,7 +281,14 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
  * sunk 0.36 — and the lamp where the vertical street crosses the avenue
  * floated 0.2 above the carriageway.
  */
-export type Surface = 'road' | 'junction' | 'pavement' | 'grass' | 'lot' | 'bare'
+export type Surface =
+  | 'road'
+  | 'junction'
+  | 'pavement'
+  | 'grass'
+  | 'lot'
+  | 'plaza'
+  | 'bare'
 
 /** Snap a world position to the cell centre Street.tsx would tile there. */
 export function cellAt(layout: BlockLayout, x: number, z: number): [number, number] {
@@ -270,6 +303,7 @@ export function classifyCell(layout: BlockLayout, x: number, z: number): Surface
   const near = (a: number, b: number) => Math.abs(a - b) < 0.01
 
   if (lotCells.has(cellKey(x, z))) return 'lot'
+  if (layout.parkCells.has(cellKey(x, z))) return 'plaza'
 
   const onVertical = near(x, road.x)
   const onHorizontal = near(z, road.z) || near(z, avenueZ)

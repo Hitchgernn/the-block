@@ -105,7 +105,8 @@ export default function Street({ layout }: StreetProps) {
           ;(seed.widthScale > 1.04 ? leaf : verge).push({ key, pos })
           break
         }
-        // 'lot' draws its own ground; 'bare' is the plinth showing through.
+        // 'lot' and 'plaza' bring their own ground; 'bare' is the plinth
+        // showing through.
         default:
           break
       }
