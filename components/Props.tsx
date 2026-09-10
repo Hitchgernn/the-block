@@ -222,7 +222,30 @@ export default function Props({ layout }: PropsProps) {
   // share the line now and are staggered along it instead.
   const VERGE = TILE * 0.78
   const verges = [road.x - VERGE, road.x + VERGE]
-  const kinds = ['street', 'apple', 'conifer', 'bare'] as const
+  type Species = 'street' | 'apple' | 'conifer' | 'bare'
+
+  /**
+   * Which trees grow in which corner of the block.
+   *
+   * The species were picked from one hash across the whole town, so all four
+   * quadrants came out the same mixture and a viewer spinning the camera had
+   * nothing to tell one corner from another. Each quadrant now leans on a
+   * species without becoming a monoculture — enough that "the conifer corner"
+   * means something.
+   *
+   * This is scenery and says nothing about anybody: the trees are not derived
+   * from the event log and must never look as though they are.
+   */
+  const PLANTING: Record<number, readonly Species[]> = {
+    0: ['conifer', 'conifer', 'street', 'apple'],
+    1: ['apple', 'apple', 'street', 'bare'],
+    2: ['street', 'street', 'bare', 'conifer'],
+    3: ['bare', 'street', 'apple', 'street'],
+  }
+  const quadrant = (x: number, z: number) =>
+    (x >= road.x ? 1 : 0) + (z >= road.z ? 2 : 0)
+  const species = (x: number, z: number, seed: ReturnType<typeof jitterFor>): Species =>
+    PLANTING[quadrant(x, z)][Math.floor(Math.abs(seed.rotation) * 1000) % 4]
 
   // Planting down both pavements of the vertical street.
   for (const z of grid.vertical) {
@@ -231,7 +254,7 @@ export default function Props({ layout }: PropsProps) {
     for (const x of verges) {
       const seed = jitterFor(`tree-${x}-${z}`)
       if (seed.widthScale < 0.94) continue
-      const kind = kinds[Math.floor(Math.abs(seed.rotation) * 1000) % kinds.length]
+      const kind = species(x, z, seed)
       trees[kind].push({
         key: `t-${x}-${z}`,
         pos: [x + seed.offsetX * 0.6, PAVEMENT, z + seed.offsetZ * 0.6],
@@ -246,7 +269,7 @@ export default function Props({ layout }: PropsProps) {
     if (Math.abs(x - road.x) < TILE * 1.5) continue
     const seed = jitterFor(`xtree-${x}`)
     if (seed.depthScale < 1.0) continue
-    trees.street.push({
+    trees[species(x, road.z + VERGE, seed)].push({
       key: `xt-${x}`,
       pos: [x + seed.offsetX, PAVEMENT, road.z + VERGE],
       rotY: seed.rotation * 6,
