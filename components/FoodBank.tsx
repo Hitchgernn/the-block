@@ -129,6 +129,41 @@ export default function FoodBank({ position, selected, onSelect }: FoodBankProps
         </mesh>
       ))}
 
+      {/*
+        The side walls.
+
+        The camera goes all the way round, and from the east or west this was a
+        blank white slab — the largest, brightest, emptiest object in the scene.
+        The houses were given windows on all four faces for exactly this reason.
+
+        Dark glass, like the front's: the doorway is the only thing here that is
+        allowed to be lit.
+      */}
+      {[-1, 1].map((side) => (
+        <group key={`side-${side}`}>
+          {[-1.7, 0, 1.7].map((z) => (
+            <mesh
+              key={`sw-${side}-${z}`}
+              position={[side * (WIDTH / 2 + 0.02), GROUND + 1.75, z]}
+            >
+              <boxGeometry args={[0.06, 2.1, 0.7]} />
+              <meshStandardMaterial color="#2c3a4e" roughness={1} />
+            </mesh>
+          ))}
+          {/* A pilaster at each end, so the wall has a vertical rhythm rather
+              than one unbroken face. */}
+          {[-DEPTH / 2 + 0.35, DEPTH / 2 - 0.35].map((z) => (
+            <mesh
+              key={`pil-${side}-${z}`}
+              position={[side * (WIDTH / 2 + 0.06), GROUND + HEIGHT / 2, z]}
+            >
+              <boxGeometry args={[0.14, HEIGHT, 0.5]} />
+              <meshStandardMaterial color={SLAB} roughness={1} flatShading />
+            </mesh>
+          ))}
+        </group>
+      ))}
+
       {/* The back. The camera goes all the way round, so the rear cannot be a
           blank wall — but it is a service yard, not a second frontage, and it
           stays unlit: nobody shows up here. */}
