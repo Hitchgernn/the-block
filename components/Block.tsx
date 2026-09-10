@@ -12,6 +12,7 @@ import Skyline from '@/components/Skyline'
 import { TILE, preloadSceneAssets } from '@/components/scene-assets'
 import FoodBank from '@/components/FoodBank'
 import SceneLayer from '@/components/SceneLayer'
+import VacantLot from '@/components/VacantLot'
 import { KERB, PALETTE, layoutPlots } from '@/components/scene-utils'
 
 interface BlockProps {
@@ -268,6 +269,10 @@ export default function Block({
         />
       </SceneLayer>
 
+
+      {layout.vacantLots.map(([x, z]) => (
+        <VacantLot key={`vacant-${x}-${z}`} position={[x, 0, z]} />
+      ))}
 
       {placements.map(({ plot, x, z }) => (
         <Plot

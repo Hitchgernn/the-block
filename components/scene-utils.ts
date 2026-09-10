@@ -138,6 +138,8 @@ export interface BlockLayout {
   road: { x: number; z: number }
   /** Where the food bank stands, facing the block. */
   foodBank: { x: number; z: number }
+  /** Its paving, reserved so the street lays nothing underneath it. */
+  foodBankCells: Set<string>
   /** Grid plus the food bank, so the camera can frame everything. */
   sceneDepth: number
   /** Centre line of the avenue in front of the block, on the tile grid. */
@@ -173,6 +175,15 @@ export interface BlockLayout {
    */
   park: { x: number; z: number }
   parkCells: Set<string>
+  /**
+   * Lot cells the grid lays out but no volunteer occupies.
+   *
+   * The grid is rectangular and the headcount rarely fills it — 23 volunteers
+   * in 24 cells — so one lot had a street laid around it and nothing drawn on
+   * it. These are marked out as ground waiting for someone rather than left as
+   * a hole in the block.
+   */
+  vacantLots: [number, number][]
 }
 
 /** How Street.tsx and layoutPlots agree on which cell is which. */
@@ -241,33 +252,63 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
     }
   }
 
+  /**
+   * Snapped to the tile grid. The avenue used to fall wherever the food bank
+   * happened to be, so no tile centre landed on it and the crossing never got
+   * an intersection piece.
+   */
+  const avenueZ =
+    Math.round((-depth / 2 - FORECOURT_DEPTH + LOT * 1.6) / LOT) * LOT
+
+  /**
+   * The food bank stands two cells beyond the avenue, on paving of its own.
+   *
+   * It used to sit at z = -21.5 on x = 0 — which is the vertical street's
+   * centreline — so the carriageway ran straight through the building, and its
+   * forecourt tiles, laid at -18.5 and -14.5, straddled two road cells each
+   * including the avenue junction. Three things fix it together: the street
+   * now stops at the avenue, the building sits on a cell centre, and its
+   * paving is reserved here so nothing else lays ground under it.
+   */
+  const foodBankZ = avenueZ - LOT * 2
+  const foodBankCells = new Set<string>()
+  for (const dx of [-LOT, 0, LOT]) {
+    for (const dz of [LOT, 0, -LOT]) {
+      foodBankCells.add(cellKey(dx, foodBankZ + dz))
+    }
+  }
+
+  const taken = new Set(placements.map((p) => cellKey(p.x, p.z)))
+  const vacantLots: [number, number][] = []
+  for (let col = 0; col < gridCols; col += 1) {
+    for (let row = 0; row < gridRows; row += 1) {
+      const x = col * LOT + (col >= colBreak ? ROAD_GAP : 0) - width / 2 + LOT / 2
+      const z = row * LOT + (row >= rowBreak ? ROAD_GAP : 0) - depth / 2 + LOT / 2
+      if (!taken.has(cellKey(x, z))) vacantLots.push([x, z])
+    }
+  }
+
   return {
     placements,
     width,
     depth,
     lotCells,
+    vacantLots,
     park,
     parkCells,
     road: {
       x: colBreak * LOT + ROAD_GAP / 2 - width / 2,
       z: rowBreak * LOT + ROAD_GAP / 2 - depth / 2,
     },
-    foodBank: { x: 0, z: -depth / 2 - FORECOURT_DEPTH },
+    foodBank: { x: 0, z: foodBankZ },
+    foodBankCells,
     sceneDepth: depth + FORECOURT_DEPTH * 2,
-    /**
-     * Snapped to the tile grid. The avenue used to fall wherever the food bank
-     * happened to be, so no tile centre landed on it and the crossing never got
-     * an intersection piece.
-     */
-    avenueZ:
-      Math.round((-depth / 2 - FORECOURT_DEPTH + LOT * 1.6) / LOT) * LOT,
+    avenueZ,
     ground: {
       halfX: Math.ceil((width / 2 + LOT) / LOT) * LOT,
       nearZ: Math.ceil((depth / 2 + LOT) / LOT) * LOT,
-      farZ:
-        Math.floor(
-          (-depth / 2 - FORECOURT_DEPTH + LOT * 1.6 - LOT * 2) / LOT,
-        ) * LOT,
+      // Far enough to carry the food bank's own block of paving.
+      farZ: foodBankZ - LOT,
     },
   }
 }
@@ -288,7 +329,6 @@ export type Surface =
   | 'grass'
   | 'lot'
   | 'plaza'
-  | 'bare'
 
 /** Snap a world position to the cell centre Street.tsx would tile there. */
 export function cellAt(layout: BlockLayout, x: number, z: number): [number, number] {
@@ -299,13 +339,16 @@ export function cellAt(layout: BlockLayout, x: number, z: number): [number, numb
 }
 
 export function classifyCell(layout: BlockLayout, x: number, z: number): Surface {
-  const { road, avenueZ, ground, lotCells } = layout
+  const { road, avenueZ, lotCells } = layout
   const near = (a: number, b: number) => Math.abs(a - b) < 0.01
 
   if (lotCells.has(cellKey(x, z))) return 'lot'
   if (layout.parkCells.has(cellKey(x, z))) return 'plaza'
+  if (layout.foodBankCells.has(cellKey(x, z))) return 'plaza'
 
-  const onVertical = near(x, road.x)
+  // The vertical street runs from the near edge down to the avenue and stops.
+  // Carried on, it ran through the food bank.
+  const onVertical = near(x, road.x) && z > avenueZ - 0.01
   const onHorizontal = near(z, road.z) || near(z, avenueZ)
   if (onVertical && onHorizontal) return 'junction'
   if (onVertical || onHorizontal) return 'road'
@@ -318,11 +361,14 @@ export function classifyCell(layout: BlockLayout, x: number, z: number): Surface
     return 'pavement'
   }
 
-  const outside =
-    Math.abs(x) > ground.halfX - 0.01 ||
-    z > ground.nearZ - 0.01 ||
-    z < ground.farZ + 0.01
-  return outside ? 'grass' : 'bare'
+  // Everything the block has not claimed is lawn.
+  //
+  // This used to return 'bare' for cells inside the ground extent, and nothing
+  // was drawn on them at all: thirteen of them — the outer column at x = +/-20
+  // and the whole row at z = 16 — sat between the last pavement and the start
+  // of the grass rim with the plinth showing through. There is no such thing
+  // as ground the town owns but does not cover.
+  return 'grass'
 }
 
 /** The surface a prop at this position is actually standing on. */

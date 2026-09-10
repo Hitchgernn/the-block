@@ -69,6 +69,24 @@ export const SURFACE_TOP = {
   grass: 0.84,
 } as const
 
+/**
+ * How tall each ground tile is in its own file, measured from the GLB bounds.
+ *
+ * The two lawn tiles are not the same height — grass-verge-01 stands 0.84 and
+ * autumn-leaf-lawn-tile-01 only 0.43 — and they are laid at random across the
+ * same rim, so the lawn had a 0.41 step running through it wherever the two
+ * met, and every prop settled to SURFACE_TOP.grass floated that far above any
+ * leaf tile it stood on. The shorter tile is lifted by the difference instead,
+ * which keeps the autumn variation and gives the rim one surface.
+ */
+export const ASSET_HEIGHT = {
+  grassVerge: 0.84,
+  leafLawn: 0.43,
+} as const
+
+/** Lift for a ground tile so its surface lands on the class's walking height. */
+export const LEAF_LIFT = ASSET_HEIGHT.grassVerge - ASSET_HEIGHT.leafLawn
+
 const url = (name: AssetName) => `/models/${ASSETS[name]}.glb`
 
 /**

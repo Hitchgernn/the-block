@@ -336,15 +336,6 @@ export default function Props({ layout }: PropsProps) {
   // Snapped to a cell corner by layoutPlots, so the four paving tiles below
   // replace four whole ground cells instead of straddling sixteen of them.
   const { x: parkX, z: parkZ } = layout.park
-  const paving: Placement[] = []
-  for (const dx of [-0.5, 0.5]) {
-    for (const dz of [-0.5, 0.5]) {
-      paving.push({
-        key: `pk${dx}${dz}`,
-        pos: [parkX + dx * TILE, 0, parkZ + dz * TILE],
-      })
-    }
-  }
   // Inside the paving, not past its edge. The four paving tiles reach one tile
   // from centre, so trees at 1.1 stood on the grass beyond it while being
   // placed at plaza height — half sunk, and clearly on the wrong ground.
@@ -395,7 +386,6 @@ export default function Props({ layout }: PropsProps) {
 
   return (
     <group>
-      <Scattered asset="plazaPaving" placements={paving} />
       <Scattered asset="streetTree" placements={trees.street} />
       <Scattered asset="appleTree" placements={trees.apple} />
       <Scattered asset="conifer" placements={trees.conifer} />

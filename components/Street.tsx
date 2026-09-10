@@ -2,7 +2,7 @@
 
 import { Instance, Instances } from '@react-three/drei'
 import type { AssetName } from '@/components/scene-assets'
-import { TILE, useSceneAsset } from '@/components/scene-assets'
+import { LEAF_LIFT, TILE, useSceneAsset } from '@/components/scene-assets'
 import type { BlockLayout } from '@/components/scene-utils'
 import { LOT, classifyCell, jitterFor } from '@/components/scene-utils'
 
@@ -64,6 +64,7 @@ export default function Street({ layout }: StreetProps) {
   const junctions: Placement[] = []
   const pavement: Placement[] = []
   const verge: Placement[] = []
+  const plaza: Placement[] = []
   const leaf: Placement[] = []
 
   // The cell grid is anchored to the streets themselves, not to the world
@@ -100,13 +101,25 @@ export default function Street({ layout }: StreetProps) {
         case 'pavement':
           pavement.push({ key, pos })
           break
+        // The park and the food bank stand on paving. They used to lay it
+        // themselves — the food bank's tiles landed off the cell grid and
+        // overlapped the road underneath — so the ground is laid here, once,
+        // by whoever owns the ground.
+        case 'plaza':
+          plaza.push({ key, pos })
+          break
         case 'grass': {
+          // The leaf tile is 0.41 shorter than the verge tile, so it is lifted
+          // to meet it rather than laid flush and leaving a step in the lawn.
           const seed = jitterFor(`verge-${x}-${z}`)
-          ;(seed.widthScale > 1.04 ? leaf : verge).push({ key, pos })
+          if (seed.widthScale > 1.04) {
+            leaf.push({ key, pos: [x, LEAF_LIFT, z] })
+          } else {
+            verge.push({ key, pos })
+          }
           break
         }
-        // 'lot' and 'plaza' bring their own ground; 'bare' is the plinth
-        // showing through.
+        // A lot draws its own ground, from the volunteer's history.
         default:
           break
       }
@@ -118,6 +131,7 @@ export default function Street({ layout }: StreetProps) {
       <Tiles asset="roadStraight" placements={carriageway} />
       <Tiles asset="roadIntersection" placements={junctions} />
       <Tiles asset="sidewalk" placements={pavement} />
+      <Tiles asset="plazaPaving" placements={plaza} />
       <Tiles asset="grassVerge" placements={verge} />
       <Tiles asset="leafLawn" placements={leaf} />
     </group>

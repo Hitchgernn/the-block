@@ -3,8 +3,7 @@
 import { useRef } from 'react'
 import type * as THREE from 'three'
 import { PALETTE, SLAB } from '@/components/scene-utils'
-import { Instances, Instance } from '@react-three/drei'
-import { SURFACE_TOP, TILE, useSceneAsset } from '@/components/scene-assets'
+import { SURFACE_TOP } from '@/components/scene-assets'
 
 interface FoodBankProps {
   position: [number, number, number]
@@ -13,33 +12,18 @@ interface FoodBankProps {
 }
 
 /**
- * The building stands on its own paving, whose top face is at SURFACE_TOP.plaza.
+ * The building stands on paving the street lays for it.
+ *
+ * It used to lay its own, three tiles at z = 3 and 7 from its centre, which
+ * landed nowhere near a cell centre and overlapped the road tiles underneath —
+ * the forecourt straddled the avenue junction. layoutPlots reserves its cells
+ * now and Street tiles them, so one thing decides what is on the ground.
  */
 const GROUND = SURFACE_TOP.plaza
 
 const WIDTH = 6.4
 const DEPTH = 6.26
 const HEIGHT = 3.5
-
-/** Single-instance scenery, so it renders as a plain mesh rather than a batch. */
-function Paving({ selected }: { selected: boolean }) {
-  const loaded = useSceneAsset('plazaPaving')
-  if (!loaded) return null
-  return (
-    <Instances
-      geometry={loaded.geometry}
-      material={loaded.material}
-      limit={9}
-      frustumCulled={false}
-    >
-      {[-TILE, 0, TILE].map((x) =>
-        [TILE * 0.75, TILE * 1.75].map((z) => (
-          <Instance key={`${x}-${z}`} position={[x, selected ? 0.02 : 0, z]} />
-        )),
-      )}
-    </Instances>
-  )
-}
 
 /**
  * The one building on the block that is not somebody's plot.
@@ -65,19 +49,10 @@ export default function FoodBank({ position, selected, onSelect }: FoodBankProps
   const doorHeight = 1.5
   const canopyY = GROUND + doorHeight + 0.5
 
+  // Selecting it lifts the building a hair, which is the cue the paving used
+  // to carry before the street took the paving over.
   return (
-    <group position={position}>
-      {/* Paved forecourt, so the building stands on ground of its own and the
-          figures waiting for the next shift have somewhere to wait. */}
-      <group
-        onClick={(event) => {
-          event.stopPropagation()
-          onSelect()
-        }}
-      >
-        <Paving selected={selected} />
-      </group>
-
+    <group position={[position[0], position[1] + (selected ? 0.04 : 0), position[2]]}>
       <group
         onClick={(event) => {
           event.stopPropagation()
