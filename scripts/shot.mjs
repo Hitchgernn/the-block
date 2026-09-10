@@ -28,13 +28,15 @@ const clicks = rest.flatMap((arg, i) => (arg === '--click' ? [rest[i + 1]] : [])
 const rotateDeg = Number(rest[rest.indexOf('--rotate') + 1] ?? 0) || 0
 /**
  * --click-at X,Y clicks a point on the canvas after the camera has moved.
+ * Repeatable, so a sequence can be tested — select a house, then click empty
+ * ground and see whether the selection clears.
  *
  * --click only finds DOM buttons, so nothing in the 3D scene could be
  * exercised at all: whether clicking a house opens its panel was untestable
  * and therefore untested. This dispatches a real mouse press and release at a
  * pixel, which is what r3f raycasts against.
  */
-const clickAt = rest[rest.indexOf('--click-at') + 1]
+const clickAts = rest.flatMap((arg, i) => (arg === '--click-at' ? [rest[i + 1]] : []))
 const zoomSteps = Number(rest[rest.indexOf('--zoom') + 1] ?? 0) || 0
 
 // Warm the route first. In dev the first request after an edit triggers a
@@ -149,8 +151,8 @@ if (zoomSteps !== 0) {
 }
 
 // Last, so it lands on whatever the camera is finally looking at.
-if (clickAt) {
-  const [cx, cy] = clickAt.split(',').map(Number)
+for (const spot of clickAts) {
+  const [cx, cy] = spot.split(',').map(Number)
   for (const type of ['mousePressed', 'mouseReleased']) {
     await send('Input.dispatchMouseEvent', {
       type,
