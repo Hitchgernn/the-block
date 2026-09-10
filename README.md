@@ -99,7 +99,7 @@ Seeding is a route rather than a script because production is Turso and Vercel g
 
 ## Limitations
 
-**The data is seeded. The logic is real.** `lib/seed.ts` deterministically generates eight weeks of history for 23 volunteers, with one pattern planted in it: Saturday 9am runs 9, 9, 7 against a minimum of 6, then 5, 4, 3, 2, 3 — short five weeks running — because its two most reliable regulars stop appearing partway through. No other slot degrades: the only other shortfall anywhere in the eight weeks is Tuesday 5pm missing its minimum by one, once, in the oldest week. So identifying Saturday 9am is a real discrimination rather than the only thing available to say. The agent is not told any of this; it has to find it.
+**The data is seeded. The logic is real.** `lib/seed.ts` deterministically generates a roster of 25 volunteers and eight weeks of history for 23 of them — two join with no shifts yet, so the block has empty lots on it. One pattern is planted in that history: Saturday 9am runs 9, 9, 7 against a minimum of 6, then 5, 4, 3, 2, 3 — short five weeks running — because its two most reliable regulars stop appearing partway through. No other slot degrades: the only other shortfall anywhere in the eight weeks is Tuesday 5pm missing its minimum by one, once, in the oldest week. So identifying Saturday 9am is a real discrimination rather than the only thing available to say. The agent is not told any of this; it has to find it.
 
 This is a prototype, and the rest of the honest list:
 

@@ -109,6 +109,24 @@ From `design.md`, and they are checked:
 
 Seeded inputs, real logic. **Disclose this in the README and the video** (`prd.md` §10).
 
+**The seed is anchored to the moment it runs, so the database goes stale.**
+`seed(now = new Date())` writes history for shifts before `now` and open shifts
+after it. A database seeded on one day and read on the next therefore contains
+shifts that have since passed carrying acceptances but no completions — they
+were upcoming when they were written. Measured on Sep 11 against a database
+seeded earlier: Thursday 5pm gained a ninth week showing **zero attendance**,
+which is a worse shortfall than the Saturday 9am pattern the whole demo rests
+on, and reflection is choosing between them. **Reseed before recording anything
+or showing it to a judge:**
+
+```bash
+curl -X POST localhost:3000/api/dev/seed -H "Authorization: Bearer $CRON_SECRET"
+```
+
+Then re-check with `GET /api/trigger/reflect` (a dry run, no token spent) that
+Saturday 9am reads 9, 9, 7, 5, 4, 3, 2, 3 and that no other slot is under its
+minimum more than once.
+
 **Maria and James look small in the scene, and that is correct.** They carry the
 roster's two highest reliabilities (0.95 and 0.92) but only ever worked Saturday
 9am — one slot a week — and lapsed three weeks in, so they finish on two
