@@ -106,6 +106,62 @@ function settle(layout: BlockLayout, list: Placement[]) {
   }
 }
 
+/**
+ * Which way something on the pavement should face.
+ *
+ * A bench with its back to the road is furniture nobody would sit on. The
+ * asset's front is +z, so a rotation of theta points it at (sin, 0, cos).
+ * The nearer of the two street axes wins, which is the same question the
+ * pavement classification already answers.
+ */
+function facingStreet(layout: BlockLayout, x: number, z: number): number {
+  const dx = x - layout.road.x
+  const toCross = z - layout.road.z
+  const toAvenue = z - layout.avenueZ
+  const dz = Math.abs(toCross) < Math.abs(toAvenue) ? toCross : toAvenue
+  if (Math.abs(dx) < Math.abs(dz)) return dx > 0 ? -Math.PI / 2 : Math.PI / 2
+  return dz > 0 ? Math.PI : 0
+}
+
+/** Roughly how much pavement each thing takes up, in world units. */
+const FOOTPRINT = {
+  shelter: 2.3,
+  car: 1.6,
+  tree: 1.15,
+  bench: 0.9,
+  lamp: 0.45,
+  planter: 0.55,
+} as const
+
+/**
+ * Nothing stands inside anything else.
+ *
+ * Every prop here is placed by its own rule — trees down the verge at 0.78 of
+ * a tile, lamps at 0.74 — and no rule knew what the others had already put
+ * there. Those two numbers are 0.16 apart, so a lamp grew out of a tree at
+ * every second spacing, and a tree stood 0.88 from the middle of the bus
+ * shelter, through its roof.
+ *
+ * Earlier lists win, so the fixed things — the shelter, the lamps that have to
+ * be evenly spaced to read as infrastructure — keep their spots and the trees,
+ * of which there are many and no particular one matters, give way.
+ */
+function deconflict(lists: [Placement[], number][]) {
+  const taken: { x: number; z: number; r: number }[] = []
+  for (const [list, radius] of lists) {
+    for (let i = list.length - 1; i >= 0; i -= 1) {
+      const [x, , z] = list[i].pos
+      const clash = taken.some(
+        (t) => Math.hypot(t.x - x, t.z - z) < t.r + radius,
+      )
+      if (clash) list.splice(i, 1)
+    }
+    for (const item of list) {
+      taken.push({ x: item.pos[0], z: item.pos[2], r: radius })
+    }
+  }
+}
+
 export default function Props({ layout }: PropsProps) {
   const grid = streetGrid(layout)
   const { road, width, depth, foodBank } = layout
@@ -117,6 +173,18 @@ export default function Props({ layout }: PropsProps) {
     bare: [],
   }
   const lamps: Placement[] = []
+  // On the pavement flanking the vertical street where it meets the avenue,
+  // which is the corner people actually walk to the shift from. It used to
+  // stand at (8.8, -12.8) — inside the lot at (8, -12), its canopy across
+  // somebody's house. It is placed before anything else so nothing else lands
+  // on top of it.
+  const shelters: Placement[] = [
+    {
+      key: 'shelter',
+      pos: [layout.road.x - TILE, PAVEMENT, layout.avenueZ + TILE],
+      rotY: Math.PI,
+    },
+  ]
   const benches: Placement[] = []
   const planters: Placement[] = []
   const cars: Placement[] = []
@@ -157,33 +225,42 @@ export default function Props({ layout }: PropsProps) {
   }
 
   // Lamps at a regular spacing — infrastructure reads as placed, not scattered.
+  //
+  // Out at 1.3 tiles rather than 0.74, against the outer edge of the pavement.
+  // The trees plant at 0.78, so at 0.74 the two lines were 0.16 apart and every
+  // lamp stood inside a canopy; the collision pass then answered that by
+  // deleting the tree, which cost half the planting to fix a spacing mistake.
+  // Two lines two tiles apart both survive.
   for (const z of grid.vertical) {
     if (Math.abs(z % (TILE * 2)) > 0.01) continue
     if (Math.abs(z - road.z) < TILE) continue
-    lamps.push({ key: `lz-${z}`, pos: [road.x + TILE * 0.74, PAVEMENT, z] })
+    lamps.push({ key: `lz-${z}`, pos: [road.x + TILE * 1.3, PAVEMENT, z] })
   }
   for (const x of grid.horizontal) {
     if (Math.abs(x % (TILE * 2)) > 0.01) continue
     if (Math.abs(x - road.x) < TILE) continue
     lamps.push({
       key: `lx-${x}`,
-      pos: [x, PAVEMENT, road.z + TILE * 0.74],
+      pos: [x, PAVEMENT, road.z + TILE * 1.3],
       rotY: Math.PI / 2,
     })
   }
 
   // A place to sit at the junction, and one facing the food bank.
-  benches.push({ key: 'b1', pos: [road.x + TILE * 0.7, PAVEMENT, road.z + TILE * 1.4] })
-  benches.push({
-    key: 'b2',
-    pos: [foodBank.x - TILE * 1.1, PAVEMENT, grid.avenueZ + TILE * 0.7],
-    rotY: Math.PI,
-  })
-  planters.push({ key: 'p1', pos: [road.x - TILE * 0.7, PAVEMENT, road.z + TILE * 1.3] })
-  planters.push({
-    key: 'p2',
-    pos: [foodBank.x + TILE * 1.2, PAVEMENT, grid.avenueZ + TILE * 0.7],
-  })
+  // Turned to the road rather than left at whatever rotation they were pushed
+  // with. A bench facing a garden wall is a bench nobody sits on.
+  for (const [key, x, z] of [
+    ['b1', road.x + TILE * 0.7, road.z + TILE * 1.4],
+    ['b2', foodBank.x - TILE * 1.1, grid.avenueZ + TILE * 0.7],
+  ] as const) {
+    benches.push({ key, pos: [x, PAVEMENT, z], rotY: facingStreet(layout, x, z) })
+  }
+  for (const [key, x, z] of [
+    ['p1', road.x - TILE * 0.7, road.z + TILE * 1.3],
+    ['p2', foodBank.x + TILE * 1.2, grid.avenueZ + TILE * 0.7],
+  ] as const) {
+    planters.push({ key, pos: [x, PAVEMENT, z], rotY: facingStreet(layout, x, z) })
+  }
 
   // A few cars parked along the kerb. Parked, never driving — see the note on
   // motion above.
@@ -261,6 +338,21 @@ export default function Props({ layout }: PropsProps) {
     settle(layout, list)
   }
 
+  // Then, with everything on its real ground, make sure no two things are in
+  // the same place. Order is priority: the shelter and the evenly spaced lamps
+  // hold their spots, trees give way.
+  deconflict([
+    [shelters, FOOTPRINT.shelter],
+    [cars, FOOTPRINT.car],
+    [lamps, FOOTPRINT.lamp],
+    [benches, FOOTPRINT.bench],
+    [planters, FOOTPRINT.planter],
+    [trees.street, FOOTPRINT.tree],
+    [trees.apple, FOOTPRINT.tree],
+    [trees.conifer, FOOTPRINT.tree],
+    [trees.bare, FOOTPRINT.tree],
+  ])
+
   return (
     <group>
       <Scattered asset="plazaPaving" placements={paving} />
@@ -272,20 +364,7 @@ export default function Props({ layout }: PropsProps) {
       <Scattered asset="bench" placements={benches} />
       <Scattered asset="planter" placements={planters} />
       <Scattered asset="car" placements={cars} />
-      <Scattered
-        asset="busShelter"
-        placements={[
-          {
-            key: 'shelter',
-            // On the pavement flanking the vertical street where it meets the
-            // avenue, which is the corner people actually walk to the shift
-            // from. It used to stand at (8.8, -12.8) — inside the lot at
-            // (8, -12), its canopy across somebody's house.
-            pos: [road.x - TILE, PAVEMENT, grid.avenueZ + TILE],
-            rotY: Math.PI,
-          },
-        ]}
-      />
+      <Scattered asset="busShelter" placements={shelters} />
     </group>
   )
 }
