@@ -227,7 +227,11 @@ export default function Props({ layout }: PropsProps) {
         placements={[
           {
             key: 'shelter',
-            pos: [foodBank.x + TILE * 2.2, PAVEMENT, grid.avenueZ + TILE * 0.8],
+            // On the pavement flanking the vertical street where it meets the
+            // avenue, which is the corner people actually walk to the shift
+            // from. It used to stand at (8.8, -12.8) — inside the lot at
+            // (8, -12), its canopy across somebody's house.
+            pos: [road.x - TILE, PAVEMENT, grid.avenueZ + TILE],
             rotY: Math.PI,
           },
         ]}
