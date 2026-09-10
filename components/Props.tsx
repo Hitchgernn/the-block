@@ -4,7 +4,7 @@ import { Instance, Instances } from '@react-three/drei'
 import type { AssetName } from '@/components/scene-assets'
 import { SURFACE_TOP, TILE, useSceneAsset } from '@/components/scene-assets'
 import type { BlockLayout } from '@/components/scene-utils'
-import { jitterFor, streetGrid } from '@/components/scene-utils'
+import { jitterFor, streetGrid, surfaceAt } from '@/components/scene-utils'
 
 interface PropsProps {
   layout: BlockLayout
@@ -71,6 +71,36 @@ function Scattered({
 const PAVEMENT = SURFACE_TOP.sidewalk
 const ROAD_TOP = SURFACE_TOP.road
 const PLAZA = SURFACE_TOP.plaza
+
+/**
+ * Sit a list of street props on whatever they are actually standing on, and
+ * drop the ones standing somewhere no prop belongs.
+ *
+ * Each of these was pushed at pavement height because the pavement is where
+ * most of them go. It is not where all of them went: the outer street trees
+ * landed on the grass verge and sank 0.36 into it, and the lamp where the
+ * vertical street meets the avenue stood in the carriageway, floating 0.2
+ * above it. Asking classifyCell — the same function that decides which tile
+ * gets laid there — is the only way the two can agree.
+ *
+ * The pocket park is settled by hand afterwards, because its props stand on
+ * paving it brings with it rather than on the cell underneath.
+ */
+function settle(layout: BlockLayout, list: Placement[]) {
+  for (let i = list.length - 1; i >= 0; i -= 1) {
+    const item = list[i]
+    const surface = surfaceAt(layout, item.pos[0], item.pos[2])
+    if (surface === 'grass' || surface === 'pavement') {
+      item.pos = [
+        item.pos[0],
+        surface === 'grass' ? SURFACE_TOP.grass : SURFACE_TOP.sidewalk,
+        item.pos[2],
+      ]
+    } else {
+      list.splice(i, 1)
+    }
+  }
+}
 
 export default function Props({ layout }: PropsProps) {
   const grid = streetGrid(layout)
@@ -168,6 +198,20 @@ export default function Props({ layout }: PropsProps) {
   parking.forEach((pos, index) => {
     cars.push({ key: `c${index}`, pos, rotY: index === 2 ? Math.PI / 2 : 0 })
   })
+
+  // Street furniture is placed by rule above and settled onto real ground
+  // here, before the park adds props that stand on paving of its own.
+  for (const list of [
+    trees.street,
+    trees.apple,
+    trees.conifer,
+    trees.bare,
+    lamps,
+    benches,
+    planters,
+  ]) {
+    settle(layout, list)
+  }
 
   // A pocket park on the way to the food bank.
   //
