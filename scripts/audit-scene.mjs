@@ -231,11 +231,30 @@ const probe = `(() => {
   }
 })()`
 
-const result = await send('Runtime.evaluate', {
+// Measure once, and if the scene looks half-built, wait and measure again.
+//
+// A run during a dev-server recompile reported a defect that did not exist:
+// the layers load independently now, so a probe that lands mid-load sees a
+// town with some of its scenery missing and duly reports what is "wrong" with
+// it. A check that invents findings is worse than no check — the same lesson
+// check-frame learned by passing a full-screen crash overlay.
+const READY = 300
+
+let result = await send('Runtime.evaluate', {
   expression: probe,
   returnByValue: true,
   awaitPromise: false,
 })
+
+if ((result?.result?.value?.counts?.total ?? 0) < READY) {
+  console.error('scene looks partly loaded — waiting and measuring again')
+  await wait(8000)
+  result = await send('Runtime.evaluate', {
+    expression: probe,
+    returnByValue: true,
+    awaitPromise: false,
+  })
+}
 
 ws.close()
 proc.kill()
@@ -247,6 +266,12 @@ if (!report || report.error) {
 }
 
 const { counts, footing, clashes, gaps } = report
+if (counts.total < READY) {
+  console.error(
+    `only ${counts.total} objects in the scene — it never finished loading, so nothing here is worth believing`,
+  )
+  process.exit(2)
+}
 console.log(
   `measured ${counts.total} objects — ${counts.ground} ground tiles, ${counts.props} standing on them`,
 )
