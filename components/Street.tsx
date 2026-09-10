@@ -4,10 +4,16 @@ import { Instance, Instances } from '@react-three/drei'
 import type { AssetName } from '@/components/scene-assets'
 import { TILE, useSceneAsset } from '@/components/scene-assets'
 import type { BlockLayout } from '@/components/scene-utils'
-import { LOT, jitterFor, streetGrid } from '@/components/scene-utils'
+import { LOT, jitterFor } from '@/components/scene-utils'
 
 interface StreetProps {
   layout: BlockLayout
+}
+
+interface Placement {
+  key: string
+  pos: [number, number, number]
+  rotY?: number
 }
 
 /** One instanced draw call per asset, however many tiles are placed. */
@@ -16,7 +22,7 @@ function Tiles({
   placements,
 }: {
   asset: AssetName
-  placements: { key: string; pos: [number, number, number]; rotY?: number }[]
+  placements: Placement[]
 }) {
   const loaded = useSceneAsset(asset)
   if (!loaded || placements.length === 0) return null
@@ -35,99 +41,91 @@ function Tiles({
   )
 }
 
+const near = (a: number, b: number) => Math.abs(a - b) < 0.01
+
 /**
- * The streets, laid from the pack's 4-unit road tiles.
+ * The streets, laid as a classified tile grid.
  *
- * Tile positions come from streetGrid(), which reads the same layout object the
- * lots are placed from, so the carriageway cannot drift away from the gap it is
- * supposed to sit in.
+ * Every cell of the ground is walked once and asked what it is — carriageway,
+ * junction, pavement, or grass — rather than each kind being scattered by its
+ * own loop. The loops disagreed: pavement was laid at a fixed offset from the
+ * road and ran straight through the lots beside it, and because the street
+ * axes did not land on the tile grid, no cell was ever recognised as a
+ * crossing, so the junction had pavement in the middle of it instead of an
+ * intersection piece.
  *
- * Everything repeated goes through <Instances>. Around forty road and pavement
- * tiles at eight to twenty thousand vertices each would otherwise put half a
- * million vertices on screen for scenery, which is more than the twenty-three
- * plots the scene is actually about.
+ * The corridor is three tiles wide — pavement, carriageway, pavement — which is
+ * exactly `ROAD_GAP`, so pavement meets the lot edge and stops.
  */
 export default function Street({ layout }: StreetProps) {
-  const grid = streetGrid(layout)
-  const { road } = layout
+  const { road, avenueZ, ground } = layout
 
-  const roadTiles: { key: string; pos: [number, number, number]; rotY?: number }[] = []
-  const junctions: { key: string; pos: [number, number, number] }[] = []
+  const carriageway: Placement[] = []
+  const junctions: Placement[] = []
+  const pavement: Placement[] = []
+  const verge: Placement[] = []
+  const leaf: Placement[] = []
 
-  // Vertical street.
-  for (const z of grid.vertical) {
-    const atCross = Math.abs(z - road.z) < LOT / 2
-    const atAvenue = Math.abs(z - grid.avenueZ) < LOT / 2
-    if (atCross || atAvenue) {
-      junctions.push({ key: `j-v-${z}`, pos: [road.x, 0, z] })
-    } else {
-      roadTiles.push({ key: `v-${z}`, pos: [road.x, 0, z] })
-    }
-  }
+  // The cell grid is anchored to the streets themselves, not to the world
+  // origin. road.z lands at -2 for the current block, so a grid stepping from
+  // an arbitrary edge never put a cell centre on the horizontal street: it was
+  // never recognised as road at all, and the crossing got pavement instead of a
+  // junction. Lots share this offset, so anchoring here aligns everything.
+  const originX = road.x
+  const originZ = road.z
+  const firstX = originX - Math.ceil((originX - (-ground.halfX - TILE)) / LOT) * LOT
+  const firstZ = originZ - Math.ceil((originZ - (ground.farZ - TILE)) / LOT) * LOT
+  const toX = ground.halfX + TILE
+  const toZ = ground.nearZ + TILE
 
-  // Horizontal cross street and the avenue in front of the food bank.
-  for (const x of grid.horizontal) {
-    if (Math.abs(x - road.x) >= LOT / 2) {
-      roadTiles.push({ key: `h-${x}`, pos: [x, 0, road.z], rotY: Math.PI / 2 })
-    }
-  }
-  for (const x of grid.avenue) {
-    if (Math.abs(x - road.x) >= LOT / 2) {
-      roadTiles.push({
-        key: `a-${x}`,
-        pos: [x, 0, grid.avenueZ],
-        rotY: Math.PI / 2,
-      })
-    }
-  }
+  for (let x = firstX; x <= toX + 0.01; x += LOT) {
+    for (let z = firstZ; z <= toZ + 0.01; z += LOT) {
+      const key = `${x},${z}`
+      const pos: [number, number, number] = [x, 0, z]
 
-  // Pavement runs either side of both streets, one tile out.
-  const pavement: { key: string; pos: [number, number, number] }[] = []
-  for (const z of grid.vertical) {
-    for (const side of [-TILE, TILE]) {
-      pavement.push({ key: `pv-${z}-${side}`, pos: [road.x + side, 0, z] })
-    }
-  }
-  for (const x of grid.horizontal) {
-    for (const side of [-TILE, TILE]) {
-      if (Math.abs(x - road.x) < LOT) continue
-      pavement.push({ key: `ph-${x}-${side}`, pos: [x, 0, road.z + side] })
-    }
-  }
+      const onVertical = near(x, road.x)
+      const onCross = near(z, road.z)
+      const onAvenue = near(z, avenueZ)
+      const onHorizontal = onCross || onAvenue
 
-  // A continuous band of grass around the whole block, so the streets end in
-  // something rather than at the edge of the ground plane. Walking the ring as
-  // a rectangle rather than as four independent loops keeps the corners filled
-  // instead of leaving the diagonal gaps a naive pass produces.
-  const verge: { key: string; pos: [number, number, number] }[] = []
-  const { halfX, nearZ, farZ } = layout.ground
-  const rings = 1
+      if (onVertical && onHorizontal) {
+        junctions.push({ key, pos })
+        continue
+      }
+      if (onVertical) {
+        carriageway.push({ key, pos })
+        continue
+      }
+      if (onHorizontal) {
+        carriageway.push({ key, pos, rotY: Math.PI / 2 })
+        continue
+      }
 
-  // Some tiles come up as leaf litter instead of plain grass, so the ring is
-  // not a single flat colour. Chosen from the position hash rather than at
-  // random — the ground must not reshuffle between renders.
-  const leaf: { key: string; pos: [number, number, number] }[] = []
-  const place = (key: string, pos: [number, number, number]) => {
-    const seed = jitterFor(`verge-${pos[0]}-${pos[2]}`)
-    ;(seed.widthScale > 1.04 ? leaf : verge).push({ key, pos })
-  }
+      // One tile either side of every carriageway is pavement. That is the
+      // whole of the remaining corridor, so it cannot reach a lot.
+      const besideVertical = near(Math.abs(x - road.x), TILE)
+      const besideHorizontal =
+        near(Math.abs(z - road.z), TILE) || near(Math.abs(z - avenueZ), TILE)
+      if (besideVertical || besideHorizontal) {
+        pavement.push({ key, pos })
+        continue
+      }
 
-  for (let x = -halfX; x <= halfX; x += TILE) {
-    for (let ring = 0; ring < rings; ring += 1) {
-      place(`gn${x}-${ring}`, [x, 0, nearZ + ring * TILE])
-      place(`gf${x}-${ring}`, [x, 0, farZ - ring * TILE])
-    }
-  }
-  for (let z = farZ; z <= nearZ; z += TILE) {
-    for (let ring = 0; ring < rings; ring += 1) {
-      place(`gl${z}-${ring}`, [-halfX - ring * TILE, 0, z])
-      place(`gr${z}-${ring}`, [halfX + ring * TILE, 0, z])
+      // Grass rims the block. Inside it are the lots, which draw themselves.
+      const outside =
+        Math.abs(x) > ground.halfX - 0.01 ||
+        z > ground.nearZ - 0.01 ||
+        z < ground.farZ + 0.01
+      if (outside) {
+        const seed = jitterFor(`verge-${x}-${z}`)
+        ;(seed.widthScale > 1.04 ? leaf : verge).push({ key, pos })
+      }
     }
   }
 
   return (
     <group>
-      <Tiles asset="roadStraight" placements={roadTiles} />
+      <Tiles asset="roadStraight" placements={carriageway} />
       <Tiles asset="roadIntersection" placements={junctions} />
       <Tiles asset="sidewalk" placements={pavement} />
       <Tiles asset="grassVerge" placements={verge} />

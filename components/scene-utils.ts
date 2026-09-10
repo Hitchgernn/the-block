@@ -94,8 +94,8 @@ export function jitterFor(volunteerId: string): Jitter {
     hasAnnex: rand() > 0.55,
     annexSide: rand() > 0.5 ? 1 : -1,
     hasChimney: rand() > 0.45,
-    offsetX: rand() * 0.3 - 0.15,
-    offsetZ: rand() * 0.3 - 0.15,
+    offsetX: rand() * 0.2 - 0.1,
+    offsetZ: rand() * 0.2 - 0.1,
     padRotation: (rand() * 4 - 2) * deg,
   }
 }
@@ -110,11 +110,14 @@ export function jitterFor(volunteerId: string): Jitter {
  */
 export const LOT = 4.0
 /**
- * Two tiles wide: one for the carriageway, one for the pavement and planting
- * either side of it. At a single tile the lots sat hard against the kerb and
- * there was a quarter of a unit to put a street tree in.
+ * Three tiles wide: pavement, carriageway, pavement.
+ *
+ * At two tiles the corridor was 8 across — a 4-wide carriageway with 2 spare
+ * either side — but the pack's pavement tiles are also 4 wide, so they were
+ * laid straight through the neighbouring lots and the houses stood on them.
+ * Three tiles makes the pavement abut the lot edge exactly.
  */
-export const ROAD_GAP = 8.0
+export const ROAD_GAP = 12.0
 const COLS = 6
 
 export interface Placement {
@@ -137,6 +140,8 @@ export interface BlockLayout {
   foodBank: { x: number; z: number }
   /** Grid plus the food bank, so the camera can frame everything. */
   sceneDepth: number
+  /** Centre line of the avenue in front of the block, on the tile grid. */
+  avenueZ: number
   /**
    * Extent of the ground the town stands on — the grass ring and the plinth
    * beneath it both read these, so the slab cannot end short of the grass and
@@ -191,6 +196,13 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
     },
     foodBank: { x: 0, z: -depth / 2 - FORECOURT_DEPTH },
     sceneDepth: depth + FORECOURT_DEPTH * 2,
+    /**
+     * Snapped to the tile grid. The avenue used to fall wherever the food bank
+     * happened to be, so no tile centre landed on it and the crossing never got
+     * an intersection piece.
+     */
+    avenueZ:
+      Math.round((-depth / 2 - FORECOURT_DEPTH + LOT * 1.6) / LOT) * LOT,
     ground: {
       halfX: Math.ceil((width / 2 + LOT) / LOT) * LOT,
       nearZ: Math.ceil((depth / 2 + LOT) / LOT) * LOT,
@@ -320,7 +332,7 @@ export interface StreetGrid {
 export function streetGrid(layout: BlockLayout): StreetGrid {
   const halfW = layout.width / 2 + LOT * 1.5
   const halfD = layout.depth / 2 + LOT * 1.5
-  const avenueZ = layout.foodBank.z + LOT * 1.6
+  const avenueZ = layout.avenueZ
 
   const line = (from: number, to: number) => {
     const out: number[] = []
