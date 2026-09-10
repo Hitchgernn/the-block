@@ -119,10 +119,13 @@ Measured at 25 volunteers, 1400x900:
 | ...of which all borrowed scenery | **~52** |
 
 Roads, pavements, grass, some forty trees, lamps, benches, cars, twenty-six
-skyline towers, the park and the food bank cost about fifty draw calls between
-them, because every repeated asset goes through drei `<Instances>`. **Keep it
-that way** — the same content drawn one mesh per placement would be several
-hundred.
+skyline towers and the park cost about fifty draw calls between them, because
+every repeated asset goes through drei `<Instances>`. **Keep it that way** —
+the same content drawn one mesh per placement would be several hundred.
+
+The food bank is the exception and is deliberately not from the pack: the
+shop-awning model read as a corner store, so it is built from about a dozen
+primitives instead. It is one building, so a dozen calls is the whole cost.
 
 The plots are the expensive part and cannot be instanced: each is unique
 geometry derived from one volunteer's history, and window emissive colour varies

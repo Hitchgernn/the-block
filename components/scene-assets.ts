@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
-import { KERB, PALETTE, ROAD } from '@/components/scene-utils'
+import { KERB, ROAD } from '@/components/scene-utils'
 
 /**
  * The CC0 low-poly pack, pulled into this project's palette.
@@ -41,7 +41,6 @@ export const ASSETS = {
   streetLamp: 'street-lamp-01',
   busShelter: 'bus-shelter-01',
   car: 'car-sedan-01',
-  shopAwning: 'shop-awning-01',
   apartment: 'apartment-block-01',
   skyscraper: 'glass-skyscraper-01',
   supertall: 'glass-supertall-01',
@@ -100,7 +99,6 @@ const TINT: Record<AssetName, string> = {
   // Lifted well above the other street furniture: a parked car sat at the
   // same value as the kerb and simply disappeared into the road.
   car: '#7d8ba6',
-  shopAwning: PALETTE.stone,
   apartment: '#2f3d52',
   skyscraper: '#2b3748',
   supertall: '#293446',
