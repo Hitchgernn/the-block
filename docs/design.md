@@ -100,9 +100,11 @@ Left-aligned throughout. No centered body text.
 `<cylinderGeometry>`, `<coneGeometry>`, `<planeGeometry>`. Flat-shaded
 (`<meshStandardMaterial roughness={1}>`).
 
-**The world around them is a CC0 low-poly pack** (`public/models/`, 21 assets,
-728 KB) — roads, pavements, grass, trees, benches, lamps, cars, a bus shelter,
-and the towers on the horizon.
+**The world around them is a CC0 low-poly pack** (`public/models/`, 19 assets,
+668 KB) — roads, pavements, grass, trees, benches, lamps, cars, and the towers
+on the horizon. Two of the original 21 were dropped: the shop that stood in for
+the food bank read as a corner store, and the bus shelter was cut at the
+owner's request.
 
 *Revised during the build.* This section originally said "primitives only, no
 imported models", and `prd.md` §10 listed that as the mitigation for the risk

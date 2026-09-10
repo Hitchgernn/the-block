@@ -125,8 +125,8 @@ docs/         prd.md, architecture.md, design.md, workflow.md, sdk-notes.md
 ## Credits
 
 The 3D scenery in `public/models/` — roads, pavements, grass, trees, benches,
-street lamps, cars, the bus shelter and the skyline towers — is a **CC0 /
-public domain** low-poly pack. No attribution is required; it is noted here
+street lamps, cars and the skyline towers — is a **CC0 / public domain**
+low-poly pack. No attribution is required; it is noted here
 because knowing what you did not make is part of an honest repository.
 
 Everything that carries meaning is generated from the event log rather than

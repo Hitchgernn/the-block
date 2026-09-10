@@ -190,7 +190,7 @@ Note: Vercel Cron on the free tier is limited in frequency. This barely matters 
 | App | Next.js (App Router) | Agent + API + frontend in one deployable |
 | Store | Turso or Neon | Serverless-compatible; **not** local SQLite |
 | Validation | Zod | SDK-native for tools and structured output |
-| 3D | react-three-fiber + drei | Primitives only |
+| 3D | react-three-fiber + drei | Plots are primitives; the scenery is a CC0 pack (`design.md` §4) |
 | Notifications | Slack Web API | Volunteers already have it installed |
 | Hosting | Vercel | One deploy, live URL, scores higher per rules |
 | Deployment (stretch) | Bedrock AgentCore | Optional per rules; strengthens Technical Implementation |
