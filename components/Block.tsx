@@ -34,8 +34,27 @@ const PLINTH_HEIGHT = 1.6
 /** Darker than the ground it stands on, so the edge reads without a highlight. */
 const PLINTH_SIDE = '#16202e'
 
+/**
+ * How far the camera may tilt, measured from straight down. OrbitControls
+ * clamps to these every frame, so the opening angle has to be one of them
+ * rather than a separate number that happens to look right.
+ *
+ * It was not: the opening direction worked out to a 65.3 degree polar angle
+ * against a 58.06 degree ceiling, so the controls hauled the camera up on the
+ * first frame and the framing below sized the distance for an elevation
+ * nobody ever saw.
+ */
+const POLAR_MIN = Math.PI / 4.4
+const POLAR_MAX = Math.PI / 3.1
+/** A little above the low end, which is the isometric-ish angle design.md asks for. */
+const POLAR_DEFAULT = POLAR_MAX - 0.04
+
 /** Fixed isometric-ish direction. Only the distance ever changes. */
-const VIEW_DIR = new THREE.Vector3(0.642, 0.418, 0.642).normalize()
+const VIEW_DIR = new THREE.Vector3(
+  Math.sin(POLAR_DEFAULT) * Math.SQRT1_2,
+  Math.cos(POLAR_DEFAULT),
+  Math.sin(POLAR_DEFAULT) * Math.SQRT1_2,
+).normalize()
 
 /**
  * Keeps the whole block in frame at any viewport without moving the angle.
@@ -84,10 +103,18 @@ function Framing({
     // edge at this margin with the food bank in frame.
     // Framed a touch wide so the plinth's edge stays in shot — the thickness
     // is the whole point of having one.
-    const margin = compact ? 1.3 : 1.42
+    //
+    // Across and up carry their own margins because the two fits are not the
+    // same problem. The block is widest along its diagonal and the sides need
+    // room; vertically it is already stretched by the camera's tilt, and one
+    // shared 1.42 pushed the camera far enough back that the skyline came over
+    // the top edge and the town shrank into the middle of the frame. 1.18 puts
+    // the vertical fit back level with the horizontal one at 1400x708.
+    const marginAcross = compact ? 1.3 : 1.42
+    const marginUp = compact ? 1.12 : 1.18
     const distance = Math.max(
-      (spanAcross * margin) / 2 / Math.tan(hFov / 2),
-      (spanUp * margin) / 2 / Math.tan(vFov / 2),
+      (spanAcross * marginAcross) / 2 / Math.tan(hFov / 2),
+      (spanUp * marginUp) / 2 / Math.tan(vFov / 2),
     )
     const lookAt = new THREE.Vector3(0, 1, centreZ)
     cam.position.copy(VIEW_DIR).multiplyScalar(distance).add(lookAt)
@@ -285,8 +312,8 @@ export default function Block({
         enableDamping
         dampingFactor={0.08}
         rotateSpeed={0.35}
-        minPolarAngle={Math.PI / 4.4}
-        maxPolarAngle={Math.PI / 3.1}
+        minPolarAngle={POLAR_MIN}
+        maxPolarAngle={POLAR_MAX}
         target={[0, 1, centreZ]}
       />
     </Canvas>
