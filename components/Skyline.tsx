@@ -54,7 +54,15 @@ export default function Skyline({ layout }: SkylineProps) {
   // than as a wall across the top of the frame. Measured: at 1.4x radius and
   // full scale, 989 of 1400 pixels along the top edge were tower rather than
   // sky, so the skyline was being sliced off instead of receding.
-  const radius = Math.max(width, depth) * 1.95
+  //
+  // 2.1 rather than 1.95 since the camera's opening angle was corrected. The
+  // frame's top edge points about 19 degrees *below* the horizon at this tilt,
+  // so a distant city can only ever enter the shot by having its roofs cut off
+  // by that edge. Measured across 1.4, 1.75, 1.95, 2.1 and 2.6: everything
+  // under 2.1 left a sliced tower in the top corners. The city is what you find
+  // when you pull the camera back or walk it round, which is also when a viewer
+  // is asking where this place is.
+  const radius = Math.max(width, depth) * 2.1
 
   const apartments: Tower[] = []
   const skyscrapers: Tower[] = []
