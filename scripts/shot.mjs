@@ -1,7 +1,7 @@
 // Screenshot the running app over CDP.
 //
 //   node scripts/shot.mjs <url> <out.png> [--mobile] [--click "Text"]
-//                          [--rotate <deg>] [--zoom <steps>]
+//                          [--rotate <deg>] [--zoom <steps>] [--click-at X,Y]
 //
 // --rotate turns the camera by dragging. OrbitControls scales rotation by the
 // canvas HEIGHT, not its width, so the pixel distance per degree is derived
@@ -26,6 +26,15 @@ if (!url || !out) {
 const mobile = rest.includes('--mobile')
 const clicks = rest.flatMap((arg, i) => (arg === '--click' ? [rest[i + 1]] : []))
 const rotateDeg = Number(rest[rest.indexOf('--rotate') + 1] ?? 0) || 0
+/**
+ * --click-at X,Y clicks a point on the canvas after the camera has moved.
+ *
+ * --click only finds DOM buttons, so nothing in the 3D scene could be
+ * exercised at all: whether clicking a house opens its panel was untestable
+ * and therefore untested. This dispatches a real mouse press and release at a
+ * pixel, which is what r3f raycasts against.
+ */
+const clickAt = rest[rest.indexOf('--click-at') + 1]
 const zoomSteps = Number(rest[rest.indexOf('--zoom') + 1] ?? 0) || 0
 
 // Warm the route first. In dev the first request after an edit triggers a
@@ -137,6 +146,22 @@ if (zoomSteps !== 0) {
     await wait(110)
   }
   await wait(800)
+}
+
+// Last, so it lands on whatever the camera is finally looking at.
+if (clickAt) {
+  const [cx, cy] = clickAt.split(',').map(Number)
+  for (const type of ['mousePressed', 'mouseReleased']) {
+    await send('Input.dispatchMouseEvent', {
+      type,
+      x: cx,
+      y: cy,
+      button: 'left',
+      clickCount: 1,
+      buttons: type === 'mousePressed' ? 1 : 0,
+    })
+  }
+  await wait(1200)
 }
 
 const shot = await send('Page.captureScreenshot', { format: 'png' })

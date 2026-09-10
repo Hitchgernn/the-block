@@ -154,6 +154,11 @@ Chrome's `--screenshot` flag mishandles this page's `position: fixed` shell and 
 node scripts/shot.mjs http://localhost:3000/ out.png --click "Look around"
 node scripts/check-frame.mjs out.png    # must print PASS
 node scripts/audit-scene.mjs            # must print CLEAN
+
+# --click-at clicks a pixel on the canvas, which is the only way to exercise
+# anything in the 3D scene. --click only finds DOM buttons, so until this
+# existed "does clicking a house open its panel" was untestable.
+node scripts/shot.mjs http://localhost:3000/ out.png --click "Look around" --click-at 620,560
 ```
 
 `audit-scene.mjs` walks the **running three.js scene** through the
