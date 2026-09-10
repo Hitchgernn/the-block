@@ -4,7 +4,7 @@ import { Instance, Instances } from '@react-three/drei'
 import type { AssetName } from '@/components/scene-assets'
 import { TILE, useSceneAsset } from '@/components/scene-assets'
 import type { BlockLayout } from '@/components/scene-utils'
-import { LOT, jitterFor } from '@/components/scene-utils'
+import { LOT, cellKey, jitterFor } from '@/components/scene-utils'
 
 interface StreetProps {
   layout: BlockLayout
@@ -58,7 +58,7 @@ const near = (a: number, b: number) => Math.abs(a - b) < 0.01
  * exactly `ROAD_GAP`, so pavement meets the lot edge and stops.
  */
 export default function Street({ layout }: StreetProps) {
-  const { road, avenueZ, ground } = layout
+  const { road, avenueZ, ground, lotCells } = layout
 
   const carriageway: Placement[] = []
   const junctions: Placement[] = []
@@ -82,6 +82,11 @@ export default function Street({ layout }: StreetProps) {
     for (let z = firstZ; z <= toZ + 0.01; z += LOT) {
       const key = `${x},${z}`
       const pos: [number, number, number] = [x, 0, z]
+
+      // A lot draws its own ground. The back row sits exactly one tile from
+      // the avenue, so the pavement rule below claimed six of them and laid a
+      // sidewalk coplanar with the pad already there.
+      if (lotCells.has(cellKey(x, z))) continue
 
       const onVertical = near(x, road.x)
       const onCross = near(z, road.z)

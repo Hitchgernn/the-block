@@ -148,7 +148,24 @@ export interface BlockLayout {
    * leave it overhanging into open air.
    */
   ground: { halfX: number; nearZ: number; farZ: number }
+  /**
+   * Every cell the lot grid occupies, keyed "x,z".
+   *
+   * The streets are classified by distance from a road axis, and the back row
+   * of lots happens to sit exactly one tile from the avenue — so six of the
+   * twenty-three lots had a pavement tile laid through them, coplanar with
+   * their own pad and z-fighting against it. Street.tsx asks here instead of
+   * working the lot positions out a second time.
+   *
+   * The whole grid rectangle is listed, not just the occupied lots: an empty
+   * cell that took a pavement tile while its neighbour did not would leave the
+   * block's edge ragged.
+   */
+  lotCells: Set<string>
 }
+
+/** How Street.tsx and layoutPlots agree on which cell is which. */
+export const cellKey = (x: number, z: number) => `${Math.round(x)},${Math.round(z)}`
 
 /**
  * A grid of lots split by one cross street each way, then centred, with the
@@ -186,10 +203,25 @@ export function layoutPlots(plots: Plot[]): BlockLayout {
     return { plot, x, z }
   })
 
+  // The full rectangle, including cells no volunteer has yet, so the streets
+  // stop at the same line whatever the headcount.
+  const lotCells = new Set<string>()
+  for (let col = 0; col < gridCols; col += 1) {
+    for (let row = 0; row < gridRows; row += 1) {
+      lotCells.add(
+        cellKey(
+          col * LOT + (col >= colBreak ? ROAD_GAP : 0) - width / 2 + LOT / 2,
+          row * LOT + (row >= rowBreak ? ROAD_GAP : 0) - depth / 2 + LOT / 2,
+        ),
+      )
+    }
+  }
+
   return {
     placements,
     width,
     depth,
+    lotCells,
     road: {
       x: colBreak * LOT + ROAD_GAP / 2 - width / 2,
       z: rowBreak * LOT + ROAD_GAP / 2 - depth / 2,
