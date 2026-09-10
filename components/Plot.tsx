@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { Plot as PlotData } from '@/lib/types'
+import { SURFACE_TOP } from '@/components/scene-assets'
 import {
   PALETTE,
   SLAB,
@@ -154,12 +155,17 @@ export default function Plot({
   const height = baseHeight * jitter.heightScale
   const roofRadius = (Math.max(width, depth) / Math.SQRT2) * 1.1
   const roofHeight = 0.62
-  const slabTop = 0.12
+  // The lot is as thick as the pavement beside it is tall. The pack's
+  // sidewalk tile tops out at 0.48 while this pad was 0.12, so every lot was a
+  // 0.36 step down from its own kerb and the houses stood in a trench. Reading
+  // the height from SURFACE_TOP rather than restating it keeps the two from
+  // drifting apart again.
+  const slabTop = SURFACE_TOP.sidewalk
 
   return (
     <group position={position}>
       {selected ? (
-        <mesh position={[0, 0.03, 0]} rotation-y={jitter.padRotation}>
+        <mesh position={[0, slabTop + 0.03, 0]} rotation-y={jitter.padRotation}>
           <boxGeometry args={[LOT - 0.1, 0.05, LOT - 0.1]} />
           <meshStandardMaterial color={PALETTE.stone} roughness={1} />
         </mesh>
@@ -170,13 +176,13 @@ export default function Plot({
           rotated pad leaves a wedge of bare ground against its neighbour. The
           building on top still carries the jitter. */}
       <mesh
-        position={[0, 0.06, 0]}
+        position={[0, slabTop / 2, 0]}
         onClick={(event) => {
           event.stopPropagation()
           onSelect(plot.volunteerId)
         }}
       >
-        <boxGeometry args={[LOT, 0.12, LOT]} />
+        <boxGeometry args={[LOT, slabTop, LOT]} />
         <meshStandardMaterial
           color={plot.stage === 0 ? PALETTE.stoneDim : '#3b4c64'}
           roughness={1}
@@ -192,7 +198,7 @@ export default function Plot({
         which is exactly what a volunteer who has joined but not yet come is.
       */}
       {plot.stage === 0 ? (
-        <group position={[0, 0.13, 0]}>
+        <group position={[0, slabTop + 0.01, 0]}>
           {([[0, 1], [0, -1], [1, 0], [-1, 0]] as const).map(([ax, az]) => (
             <mesh
               key={`${ax}${az}`}
